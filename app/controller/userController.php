@@ -116,9 +116,8 @@ class userController extends \core\myorm_core {
                 'message' => '未传入wx.login的code！',
             );
         }
-
-
-
+        $response = json_encode($res);
+        return $response;
     }
 }
 
