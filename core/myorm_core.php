@@ -23,12 +23,11 @@ class myorm_core{
         if(is_file($contrlFile)){
             require_once $contrlFile;
             $ctrl = new $controllClass();
-//            echo $action['action'];exit;
 
-            if (method_exists($ctrl,$action['action'])){
-                $ctrl->$action['action']();
+            if (method_exists($ctrl,$action)){
+                $ctrl->$action();
             }else{
-                die('not fund action:'.$action['action']);
+                die('not fund action:'.$action);
             }
         }else{
             die('not fund controller:'.$contrlClass);

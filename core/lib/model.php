@@ -13,7 +13,7 @@ class model extends \PDO{
         try{
             parent::__construct($database['DSN'], $database['USERNAME'], $database['PASSWD']);
         }catch (\PDOException $e){
-            p($e->getMessage());
+            p('数据库连接失败:'.$e->getMessage());
         }
     }
 }

@@ -8,8 +8,8 @@ namespace core\lib;
 use core\lib\config;
 class route
 {
-    public $contro;
-    public $action;
+    public $contro = '';
+    public $action = '';
     public function __construct()
     {
         //xxx.com/index(控制器)/index（方法）

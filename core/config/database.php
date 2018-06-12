@@ -6,7 +6,7 @@
  */
 
 $database = array(
-    'DSN'=>'mysql:host=localhost;dbname=mysql',
+    'DSN'=>'mysql:host=localhost;dbname=weshop',
     'USERNAME'=>'root',
     'PASSWD'=>'123456'
 );
