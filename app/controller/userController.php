@@ -9,23 +9,6 @@ use core\lib\config;
 
 class userController extends \core\myorm_core {
 
-    /*
-     * index/index
-     * 
-     * */
-    public function index(){
-        $stmt = new \core\lib\model();
-        $sql = 'select * from user';
-        $res = $stmt->query($sql);
-        $data = $res->fetchAll();
-        print_r('123123');
-//        $router = new \core\lib\route;
-//        print_r($router->contro);
-
-//        $this->assign('data',$data);
-//        $this->display('index.html');
-
-    }
 
     /*
      * 获取微信open_id

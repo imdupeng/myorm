@@ -2,14 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9f763606-afef-412b-b74c-46b37133884d" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/app/controller/userController.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/core/config/weixin.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/controller/indexController.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/controller/indexController.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/config/database.php" beforeDir="false" afterPath="$PROJECT_DIR$/core/config/database.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/lib/model.php" beforeDir="false" afterPath="$PROJECT_DIR$/core/lib/model.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/lib/route.php" beforeDir="false" afterPath="$PROJECT_DIR$/core/lib/route.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/myorm_core.php" beforeDir="false" afterPath="$PROJECT_DIR$/core/myorm_core.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/controller/userController.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/controller/userController.php" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -68,8 +61,8 @@
       <file leaf-file-name="userController.php" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/controller/userController.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="728">
-              <caret line="32" column="30" selection-start-line="32" selection-start-column="20" selection-end-line="32" selection-end-column="30" />
+            <state relative-caret-position="572">
+              <caret line="26" column="5" lean-forward="true" selection-start-line="26" selection-start-column="5" selection-end-line="26" selection-end-column="5" />
             </state>
           </provider>
         </entry>
@@ -260,12 +253,12 @@
       <workItem from="1528201669854" duration="16853000" />
       <workItem from="1528240409075" duration="1844000" />
       <workItem from="1528514677960" duration="635000" />
-      <workItem from="1528809105569" duration="14969000" />
+      <workItem from="1528809105569" duration="15584000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="51856000" />
+    <option name="totallyTimeSpent" value="52471000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
@@ -654,8 +647,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app/controller/userController.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="728">
-          <caret line="32" column="30" selection-start-line="32" selection-start-column="20" selection-end-line="32" selection-end-column="30" />
+        <state relative-caret-position="572">
+          <caret line="26" column="5" lean-forward="true" selection-start-line="26" selection-start-column="5" selection-end-line="26" selection-end-column="5" />
         </state>
       </provider>
     </entry>
