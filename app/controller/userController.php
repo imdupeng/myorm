@@ -1,14 +1,19 @@
 <?php
 /**
- * Created by imdupeng.cn
+ * Created by imdupeng
  * Date: 2018/6/5
  * Time: 21:40
  */
 namespace app\controller;
 use core\lib\config;
+use app\Myclass\Response;
 
 class userController extends \core\myorm_core {
 
+    public function __construct()
+    {
+        //检测用户是否存在
+    }
 
     /*
      * 获取微信open_id
@@ -46,19 +51,17 @@ class userController extends \core\myorm_core {
 //        $count = $stmt->rowCount();//受影响行数
 //        echo 'prepare方法影响行数：'.$count;
         if ($addId){
-            $res = array(
-                'status' => '201',
-                'message' => '添加用户成功！',
-                'id'=>$addId
-            );
+            $status = true;
+            $code = '201';
+            $message = '添加用户成功！';
+            $data = $addId;
         }else{
-            $res = array(
-                'status' => '252',
-                'message' => '添加用户失败！',
-            );
+            $status = true;
+            $code = '252';
+            $message = '添加用户失败！';
+            $data = null;
         }
-        $response = json_encode($res);
-        return $response;
+        return Response::json($status,$code,$message,$data);
     }
 
     /*
@@ -90,34 +93,30 @@ class userController extends \core\myorm_core {
             if ($openid){
                 $is_user_exist = is_user_exist($openid);
                 if ($is_user_exist){//用户存在，登录
-                    session_start();
-                    $_SESSION["openid"] = $openid;
-                    $res = array(
-                        'status' => '200',
-                        'message' => '登录成功！',
-                    );
-                }else{//用户不存在，注册
-                    $res = array(
-                        'status' => '201',
-                        'message' => '该用户未注册！',
-                        'url'=>'index.php/user/register/openid/'.$openid
-                    );
+                    $status = true;
+                    $code = '200';
+                    $message = '登录成功！';
+                    $data = '';
+                }else{//用户不存在，跳转注册
+                    $status = false;
+                    $code = '201';
+                    $message = '该用户未注册,跳转到注册！';
+                    $data = ['url'=>'index.php/user/register/openid/'.$openid];
                 }
 
             }else{
-                $res = array(
-                    'status' => '250',
-                    'message' => '获取微信open_id错误！',
-                );
+                $status = false;
+                $code = '250';
+                $message = '获取微信open_id错误！';
+                $data = '';
             }
         }else{
-            $res = array(
-                'status' => '251',
-                'message' => '未传入wx.login的code！',
-            );
+            $status = false;
+            $code = '251';
+            $message = '未传入wx.login的code！';
+            $data = '';
         }
-        $response = json_encode($res);
-        return $response;
+        return Response::json($status,$code,$message,$data);
     }
 }
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Created by imdupeng.cn
+ * Created by imdupeng
  * Date: 2018/5/27
  * Time: 11:31
  * 常用方法

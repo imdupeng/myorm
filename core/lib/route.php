@@ -1,6 +1,6 @@
 <?php
 /**
- * Created by imdupeng.cn
+ * Created by imdupeng
  * Date: 2018/5/27
  * Time: 12:38
  */
@@ -42,7 +42,7 @@ class route
             $i = 2;
             while($i<=$count_get){
                 if ($patharr[$i+1] !='' && $patharr[$i+1]!=null){
-                    $_GET[$patharr[$i]] = $patharr[$i+1];
+                    $_REQUEST[$patharr[$i]] = $patharr[$i+1];
                 }
                 $i += 2;
             }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Created by imdupeng.cn
+ * Created by imdupeng
  * Date: 2018/5/27
  * Time: 12:23
  */
@@ -20,8 +20,11 @@ class myorm_core{
 //        print_r($action);exit;
         $contrlFile = APP.'/controller/'.$contrlClass.'Controller.php';
         $controllClass = MODULE.'\controller\\'.$contrlClass.'Controller';
+
         if(is_file($contrlFile)){
+
             require_once $contrlFile;
+
             $ctrl = new $controllClass();
 
             if (method_exists($ctrl,$action)){
