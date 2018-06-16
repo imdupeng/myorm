@@ -21,7 +21,9 @@ class Response
         }
         $res = ['status'=>$status,'code'=>$code,'message'=>$message,'data'=>$data];
 
-        if(($SERVER['HTTP_X_REQUESTED_WITH'] ?? '') == 'XMLHttpRequest') {
+        if(($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') == 'XMLHttpRequest'
+            || ($_REQUEST['data_format'] ?? 'JSON') == 'JSON'
+        ) {
             echo json_encode($res);
         } else {
             print_r($res);
@@ -33,7 +35,9 @@ class Response
     public static function error($code, $message='',$data=[]){
         $res = ['status'=>false,'code'=>$code,'message'=>$message,'data'=>$data];
 
-        if(($SERVER['HTTP_X_REQUESTED_WITH'] ?? '') == 'XMLHttpRequest') {
+        if(($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') == 'XMLHttpRequest'
+            || ($_REQUEST['data_format'] ?? 'JSON') == 'JSON'
+        ) {
             echo json_encode($res);
         } else {
             print_r($res);
