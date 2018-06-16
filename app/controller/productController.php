@@ -22,7 +22,7 @@ class productController extends \core\myorm_core{
      * @param int $pagesize 每页展示商品数量
      * */
     public function list(){
-        [$offset, $pageSize, $page, $data] = $this->pagination();
+        [$offset, $pageSize, $page, $data] = $this->pagination('productPagesize');
 
         // $sql = "
         // select *, '' as image from goods 

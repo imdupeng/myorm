@@ -82,9 +82,10 @@ class myorm_core{
         $this->userId = 1;
     }
     
-    protected function pagination()
+    protected function pagination($what='productPagesize')
     {
-        $defaultPageSize = config::get('productPagesize','weixin');
+
+        $defaultPageSize = config::get($what,'weixin');
         $page = (int)($_REQUEST['page'] ?? 1);
         $pageSize = (int)($_REQUEST['pagesize'] ?? $defaultPageSize);
         if($page <= 1) {
