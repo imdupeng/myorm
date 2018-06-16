@@ -5,6 +5,9 @@
  * Time: 12:23
  */
 namespace core;
+
+use core\lib\config;
+
 class myorm_core{
     public static $classMap = array();//防止重复引入类
     public $assign;
@@ -26,9 +29,9 @@ class myorm_core{
             require_once $contrlFile;
 
             $ctrl = new $controllClass();
-
             if (method_exists($ctrl,$action)){
-                $ctrl->$action();
+                $ctrl->init();
+                $ctrl->{$action}();
             }else{
                 die('not fund action:'.$action);
             }
@@ -70,6 +73,110 @@ class myorm_core{
             extract($this->assign);
             include_once $file;
         }
+    }
+
+
+
+    protected function init()
+    {
+        $this->userId = 1;
+    }
+    
+    protected function pagination()
+    {
+        $defaultPageSize = config::get('productPagesize','weixin');
+        $page = (int)($_REQUEST['page'] ?? 1);
+        $pageSize = (int)($_REQUEST['pagesize'] ?? $defaultPageSize);
+        if($page <= 1) {
+            $page = 1;
+        }
+        if($pageSize <= 1) {
+            $pageSize = 1;
+        }
+        if($pageSize > 100) {
+            $pageSize = 100;
+        }
+
+        $offset = ($page-1)*$pageSize;
+        $data = [
+            'page'=> $page,
+            'pagesize'=> $pageSize
+        ];
+        return [$offset, $pageSize, $page, $data];
+    }
+
+    protected function fastQuery($sql, $params = [])
+    {
+        $pdo = new \core\lib\model;
+        if(empty($params)) {
+            return $pdo->query($sql);
+        }
+        $stmt = $pdo->prepare($sql);
+        foreach($param as $n => $value) {
+            $pdo->bindValue($n, $value);
+        }
+        return $stmt->execute();
+    }
+
+
+    protected function dataForCreate($data, $allowFields=[], $fixed=[])
+    {
+        if ($allowFields) {
+            $data = array_intersect_key($data, array_fill_keys($allowFields, 1));
+        }
+        if($fixed) {
+            $data = array_merge($data, $fixed);
+        }
+
+        $fields = array_keys($data);
+        $values = array_fill(0, count($fields), '?');
+
+        $data = array_values($data);
+        array_unshift($data, null); // 下标 0 是被忽略的;
+        unset($data[0]);
+
+        return [implode(',', $fields), implode(',', $values), $data];
+    }
+
+    protected function dataForUpdate($data, $allowFields=[])
+    {
+        if ($allowFields) {
+            $data = array_intersect_key($data, array_fill_keys($allowFields, 1));
+        }
+
+        $fields = array_keys($data);
+        foreach($fields as $key => $field) {
+            $fields[$key] = "$field = :$field";
+        }
+
+        return [implode(', ', $fields), $data];
+    }
+
+    protected function fastInsert($sql, $data)
+    {
+        $pdo = new \core\lib\model;
+        $stmt = $pdo->prepare($sql);
+        foreach($data as $n => $value) {
+            $stmt->bindValue($n, $value);
+        }
+        $effected = $stmt->execute();
+        $lastId   = $effected ? $pdo->lastInsertId() : null;
+        return [$effected, $lastId];
+    }
+
+
+    protected function fastUpdate($sql, $data, $param = [])
+    {
+        $pdo = new \core\lib\model;
+        $stmt = $pdo->prepare($sql);
+        foreach($data as $n => $value) {
+            $stmt->bindValue($n, $value);
+        }
+        foreach($param as $n => $value) {
+            $stmt->bindValue($n, $value);
+        }
+        $effected = $stmt->execute();
+        return $effected;
     }
 
 }

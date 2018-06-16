@@ -20,7 +20,41 @@ class Response
             return false;
         }
         $res = ['status'=>$status,'code'=>$code,'message'=>$message,'data'=>$data];
-        echo json_encode($res);
+
+        if(($SERVER['HTTP_X_REQUESTED_WITH'] ?? '') == 'XMLHttpRequest') {
+            echo json_encode($res);
+        } else {
+            print_r($res);
+        }
+        exit;
+    }
+
+
+    public static function error($code, $message='',$data=[]){
+        $res = ['status'=>false,'code'=>$code,'message'=>$message,'data'=>$data];
+
+        if(($SERVER['HTTP_X_REQUESTED_WITH'] ?? '') == 'XMLHttpRequest') {
+            echo json_encode($res);
+        } else {
+            print_r($res);
+        }
+        exit;
+    }
+
+
+    public static function exception($code, Exception $exception){
+
+        if (DEBUG) {
+            $res = ['status'=>false,'code'=>$code,'message'=> $exception->getMessage(),'data'=>(string)$exception];
+        } else {
+            $res = ['status'=>false,'code'=>$code,'message'=> $exception->getMessage(),'data'=>''];
+        }
+
+        if(($SERVER['HTTP_X_REQUESTED_WITH'] ?? '') == 'XMLHttpRequest') {
+            echo json_encode($res);
+        } else {
+            print_r($res);
+        }
         exit;
     }
 }

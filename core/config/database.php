@@ -6,8 +6,8 @@
  */
 
 $database = array(
-    'DSN'=>'mysql:host=localhost:33069;dbname=weshop',
+    'DSN'=>'mysql:host=127.0.0.1;dbname=weshop;port=3306',
     'USERNAME'=>'root',
-    'PASSWD'=>'123456'
+    'PASSWD'=>'myoa888'
 );
 return $database;
