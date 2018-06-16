@@ -24,16 +24,26 @@ class productController extends \core\myorm_core{
     public function list(){
         [$offset, $pageSize, $page, $data] = $this->pagination();
 
-        $sql = "
-        select * from goods 
+        // $sql = "
+        // select *, '' as image from goods 
+        // where user_id={$this->userId} 
+        //   and pstatus=2
+        // order by orderby desc 
+        // limit $offset, $pageSize";
+
+        $sql2 = "
+        select goods.*, image.path as image from goods 
+        left join goods_image on goods_image.goods_id = goods.id
+        left join image on goods_image.image_id = image.id
         where user_id={$this->userId} 
           and pstatus=2
+        group by goods.id
         order by orderby desc 
         limit $offset, $pageSize";
         
-        $stmt = $this->fastQuery($sql);
+        $stmt = $this->fastQuery($sql2);
 
-        $data['products'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         return Response::json(true,350,'查询商品成功',$data);
     }
@@ -161,7 +171,7 @@ class productController extends \core\myorm_core{
                 'id' => $pk,
                 'user_id' => $this->userId,
             ];
-            
+
             $effected = $this->fastUpdate($sql, $data, $params);
             if ($effected) {
                 return Response::json(true, 350, '商品删除成功', $pk);
