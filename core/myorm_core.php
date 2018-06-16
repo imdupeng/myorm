@@ -5,7 +5,6 @@
  * Time: 12:23
  */
 namespace core;
-
 class myorm_core{
     public static $classMap = array();//防止重复引入类
     public $assign;
@@ -27,10 +26,11 @@ class myorm_core{
             require_once $contrlFile;
 
             $ctrl = new $controllClass();
-            if (method_exists($ctrl,$action['action'])){
-                $ctrl->{$action['action']}();
+
+            if (method_exists($ctrl,$action)){
+                $ctrl->$action();
             }else{
-                die('not fund action:'.$action['action']);
+                die('not fund action:'.$action);
             }
         }else{
             die('not fund controller:'.$contrlClass);
