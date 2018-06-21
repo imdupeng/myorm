@@ -9,99 +9,60 @@ namespace app\controller;
 use app\Myclass\Response;
 use core\lib\config;
 
-class productController extends \core\myorm_core{
+class senderController extends \core\myorm_core{
 
     public function __construct()
     {
         //检测用户是否存在
     }
 
+
     /*
-     * 获取商品列表,分页
+     * 获取伙伴列表,分页
      * @param int $page 第几页
-     * @param int $pagesize 每页展示商品数量
+     * @param int $pagesize 每页伙伴数量
+     * @param int $type 伙伴类型 2客户3代理商4厂商5已删除
+     * http://myorm.com/index.php/partner/list/type/2/page/1/pagesize/5
      * */
     public function list(){
-        [$offset, $pageSize, $page, $data] = $this->pagination('productPagesize');
-
-        // $sql = "
-        // select *, '' as image from goods 
-        // where user_id={$this->userId} 
-        //   and pstatus=2
-        // order by orderby desc 
-        // limit $offset, $pageSize";
-
+        [$offset, $pageSize, $page, $data] = $this->pagination('partnerPagesize');
+//        $loginOpenid = $_SESSION['openid'];
+        $user_id = $this->userId ;
         $sql2 = "
-        select goods.*, image.path as image from goods 
-        left join goods_image on goods_image.goods_id = goods.id
-        left join image on goods_image.image_id = image.id
-        where user_id={$this->userId} 
-          and pstatus=2
-        group by goods.id
-        order by orderby desc 
-        limit $offset, $pageSize";
-
+        select * from sender where user_id=$user_id and status=2 limit $offset,$pageSize";
         $stmt = $this->fastQuery($sql2);
-
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-        return Response::json(true,350,'查询商品成功',$data);
+        return Response::json(true,350,'查询伙伴成功',$data);
     }
 
-    public function test()
-    {
-        // 'id'
-        $_REQUEST['data'] = [
-            'user_id' => 1,
-            'name' => 'demo123',
-            'purchase_price' => 1,
-            'wholesale_price' =>2,
-            'retail_price' => 3,
-            'pstatus' => 2
-        ];
-        // $this->create();
-
-
-        // 'id'
-        $_REQUEST['data'] = [
-            'user_id' => 1,
-            'name' => 'demo123-1234',
-            'purchase_price' => 10,
-            'wholesale_price' =>20,
-            'retail_price' => 30,
-            'pstatus' => 20
-            ];
-        $_REQUEST['id'] = 6;
-        // $this->update();
-    
-
-        $this->delete();
-    }
+   
 
     /*
-     * 获取商品列表,分页
+     * 添加伙伴
      * */
     public function create(){
         $data = $_REQUEST['data'] ?? [];
+//        $data = $_REQUEST ?? [];//方便get提交测试
 
         //允许外面传入的字段
-        $allowFields = []; 
+        $allowFields = [];
         
         // 固定值, 补充或覆盖到 $data 中
         $fixed = [
             'user_id' => $this->userId,
+            'status' => 2,
         ];
 
-        [$fields, $values, $data] = $this->dataForCreate($data, $allowFields, $fixed);
+        $data3 = [$fields, $values, $data] = $this->dataForCreate($data, $allowFields, $fixed);
 
         try {
             $sql = "
-            insert into goods ($fields) values ($values)
+            insert into sender ($fields) values ($values)
             ";
             [$effected, $lastId] = $this->fastInsert($sql, $data);
 
             if ($effected) {
-                return Response::json(true, 350, '商品创建成功', $lastId);
+                return Response::json(true, 350, '发货人创建成功', $lastId);
             } else {
                 return Response::json(false, 351, '未知错误', 0);
             }
@@ -112,11 +73,10 @@ class productController extends \core\myorm_core{
     }
 
     /*
-     * 获取商品列表,分页
+     * 更新伙伴信息
      * */
     public function update(){
         $data = $_REQUEST['data'] ?? [];
-//        $data = $_REQUEST ?? [];//方便get提交测试
         $pk = $_REQUEST['id'] ?? 0;
 
         $allowFields = []; //允许外面传入的字段
@@ -124,7 +84,7 @@ class productController extends \core\myorm_core{
 
         try {
             $sql = "
-            update goods
+            update sender
                set $fields
              where id = :id 
                and user_id = :user_id;
@@ -138,7 +98,7 @@ class productController extends \core\myorm_core{
             
             $effected = $this->fastUpdate($sql, $data, $params);
 
-            return Response::json(true, 350, '商品更新成功', $pk);
+            return Response::json(true, 350, '发货人信息更新成功', $pk);
 
         } catch(Exception $e) {
             return Response::exception(351, $e);
@@ -147,14 +107,14 @@ class productController extends \core\myorm_core{
     }
 
     /*
-     * 删除商品,修改商品状态为4
+     * 删除发货人信息
      * */
     public function delete(){
         $pk = $_REQUEST['id'] ?? 0;
 
         $data = [
             'deleted_at' => time(),
-            'pstatus' => 4,
+            'status' => 3,
         ];
 
         $allowFields = []; //允许外面传入的字段
@@ -162,7 +122,7 @@ class productController extends \core\myorm_core{
 
         try {
             $sql = "
-            update goods
+            update partner
                set $fields
              where id = :id 
                and user_id = :user_id;
@@ -175,9 +135,9 @@ class productController extends \core\myorm_core{
 
             $effected = $this->fastUpdate($sql, $data, $params);
             if ($effected) {
-                return Response::json(true, 350, '商品删除成功', $pk);
+                return Response::json(true, 350, '伙伴删除成功', $pk);
             } else {
-                return Response::error(true, 351, '商品删除失败', $pk);
+                return Response::error(true, 351, '伙伴删除失败', $pk);
             }
 
         } catch(Exception $e) {

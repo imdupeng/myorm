@@ -113,7 +113,7 @@ class myorm_core{
             return $pdo->query($sql);
         }
         $stmt = $pdo->prepare($sql);
-        foreach($param as $n => $value) {
+        foreach($params as $n => $value) {
             $pdo->bindValue($n, $value);
         }
         return $stmt->execute();
@@ -122,17 +122,17 @@ class myorm_core{
 
     protected function dataForCreate($data, $allowFields=[], $fixed=[])
     {
-        if ($allowFields) {
+        if ($allowFields) {//如果允许值存在，则取出交集
             $data = array_intersect_key($data, array_fill_keys($allowFields, 1));
         }
         if($fixed) {
             $data = array_merge($data, $fixed);
         }
 
-        $fields = array_keys($data);
+        $fields = array_keys($data);//返回键名数组
         $values = array_fill(0, count($fields), '?');
 
-        $data = array_values($data);
+        $data = array_values($data);//返回值的数组
         array_unshift($data, null); // 下标 0 是被忽略的;
         unset($data[0]);
 

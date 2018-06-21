@@ -9,7 +9,7 @@ namespace app\controller;
 use app\Myclass\Response;
 use core\lib\config;
 
-class partnerController extends \core\myorm_core{
+class addressController extends \core\myorm_core{
 
     public function __construct()
     {
@@ -17,33 +17,25 @@ class partnerController extends \core\myorm_core{
     }
 
 
-    /*
-     * 获取伙伴列表,分页
-     * @param int $page 第几页
-     * @param int $pagesize 每页伙伴数量
-     * @param int $type 伙伴类型 2客户3代理商4厂商5已删除
-     * http://myorm.com/index.php/partner/list/type/2/page/1/pagesize/5
-     * */
-    public function list(){
-        [$offset, $pageSize, $page, $data] = $this->pagination('partnerPagesize');
-//        $loginOpenid = $_SESSION['openid'];
-        $user_id = $this->userId ;
-        $type = $_REQUEST['type'];
-        $sql2 = "
-        select * from partner where user_id=$user_id and type=$type limit $offset,$pageSize";
-        $stmt = $this->fastQuery($sql2);
-        $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        return Response::json(true,350,'查询伙伴成功',$data);
-    }
-
-   
 
     /*
-     * 添加伙伴
+     * 添加伙伴地址
      * */
     public function create(){
         $data = $_REQUEST['data'] ?? [];
-//        $data = $_REQUEST ?? [];//方便get提交测试
+
+        //判断传参中partner_id是否是当前登录user_id的伙伴
+        $partner_id = $data['partner_id'];
+        $user_id = $this->userId;
+        $pdo = new \core\lib\model;
+        $sql1 = "select id from partner where id=$partner_id and user_id=$user_id";
+        $stmt = $pdo->query($sql1);
+        $row = $stmt->rowCount();
+        if (empty($row)){
+            return Response::json(false, 352, '非法操作，该伙伴不属于您！', 0);
+        }
+
+        //partner_id的收货地址可以存在多个
 
         //允许外面传入的字段
         $allowFields = [];
@@ -62,7 +54,7 @@ class partnerController extends \core\myorm_core{
             [$effected, $lastId] = $this->fastInsert($sql, $data);
 
             if ($effected) {
-                return Response::json(true, 350, '伙伴创建成功', $lastId);
+                return Response::json(true, 350, '伙伴地址创建成功', $lastId);
             } else {
                 return Response::json(false, 351, '未知错误', 0);
             }
@@ -78,13 +70,14 @@ class partnerController extends \core\myorm_core{
     public function update(){
         $data = $_REQUEST['data'] ?? [];
         $pk = $_REQUEST['id'] ?? 0;
+        $partnerid = $_REQUEST['partner_id'] ?? 0;
 
         $allowFields = []; //允许外面传入的字段
         [$fields, $data] = $this->dataForUpdate($data, $allowFields);
 
         try {
             $sql = "
-            update partner
+            update address
                set $fields
              where id = :id 
                and user_id = :user_id;
@@ -93,12 +86,12 @@ class partnerController extends \core\myorm_core{
             // 条件上的参数,注意不要与字段名重复
             $params = [
                 'id' => $pk,
-                'user_id' => $this->userId,
+                'partner_id' => $partnerid,
             ];
             
             $effected = $this->fastUpdate($sql, $data, $params);
 
-            return Response::json(true, 350, '伙伴更新成功', $pk);
+            return Response::json(true, 350, '伙伴地址更新成功', $pk);
 
         } catch(Exception $e) {
             return Response::exception(351, $e);
@@ -107,14 +100,15 @@ class partnerController extends \core\myorm_core{
     }
 
     /*
-     * 删除伙伴
+     * 删除伙伴地址
+     * deleted_at记录值存在，则为已删除数据
      * */
     public function delete(){
         $pk = $_REQUEST['id'] ?? 0;
+        $partnerid = $_REQUEST['partner_id'] ?? 0;
 
         $data = [
             'deleted_at' => time(),
-            'type' => 5,
         ];
 
         $allowFields = []; //允许外面传入的字段
@@ -122,22 +116,22 @@ class partnerController extends \core\myorm_core{
 
         try {
             $sql = "
-            update partner
+            update address
                set $fields
              where id = :id 
-               and user_id = :user_id;
+               and partner_id = :partner_id;
             ";
             // 条件上的参数,注意不要与字段名重复
             $params = [
                 'id' => $pk,
-                'user_id' => $this->userId,
+                'partner_id' => $partnerid
             ];
 
             $effected = $this->fastUpdate($sql, $data, $params);
             if ($effected) {
-                return Response::json(true, 350, '伙伴删除成功', $pk);
+                return Response::json(true, 350, '伙伴地址删除成功', $pk);
             } else {
-                return Response::error(true, 351, '伙伴删除失败', $pk);
+                return Response::error(true, 351, '伙伴地址删除失败', $pk);
             }
 
         } catch(Exception $e) {
