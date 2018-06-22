@@ -87,6 +87,7 @@
   - 地址: /index.php/product/list/
   - 参数
     - type: 2:全部 3:最近订货 4:30天畅销
+    - keywords:  搜索关键字
   - 数据实体字段:
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(11) DEFAULT NULL,
