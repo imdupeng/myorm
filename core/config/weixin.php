@@ -8,6 +8,7 @@
 $weixin = array(
     'appid'=>'appid',
     'appsecret'=>'appsecret',
-    'productPagesize'=>10
+    'productPagesize'=>10,
+    'partnerPagesize'=>10
 );
 return $weixin;
