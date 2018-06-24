@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9f763606-afef-412b-b74c-46b37133884d" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="9f763606-afef-412b-b74c-46b37133884d" name="Default" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -16,8 +14,8 @@
       <file leaf-file-name="userController.php" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/controller/userController.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="532">
-              <caret line="101" column="33" lean-forward="true" selection-start-line="101" selection-start-column="33" selection-end-line="101" selection-end-column="33" />
+            <state relative-caret-position="570">
+              <caret line="105" column="51" lean-forward="true" selection-start-line="105" selection-start-column="51" selection-end-line="105" selection-end-column="51" />
               <folding>
                 <element signature="e#6#69#0#PHP" expanded="true" />
                 <element signature="e#96#116#0#PHP" expanded="true" />
@@ -192,7 +190,7 @@
   <component name="NodePackageJsonFileManager">
     <packageJsonPaths />
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
+  <component name="ProjectFrameBounds" extendedState="7">
     <option name="x" value="338" />
     <option name="y" value="259" />
     <option name="width" value="2580" />
@@ -325,15 +323,15 @@
       <workItem from="1529742194840" duration="56000" />
       <workItem from="1529744898959" duration="1335000" />
       <workItem from="1529746897349" duration="659000" />
-      <workItem from="1529806777805" duration="844000" />
+      <workItem from="1529806777805" duration="2102000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="97224000" />
+    <option name="totallyTimeSpent" value="98482000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="3456" height="1416" extended-state="6" />
+    <frame x="-8" y="-8" width="3456" height="1416" extended-state="7" />
     <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.16773255" />
@@ -726,8 +724,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app/controller/userController.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="532">
-          <caret line="101" column="33" lean-forward="true" selection-start-line="101" selection-start-column="33" selection-end-line="101" selection-end-column="33" />
+        <state relative-caret-position="570">
+          <caret line="105" column="51" lean-forward="true" selection-start-line="105" selection-start-column="51" selection-end-line="105" selection-end-column="51" />
           <folding>
             <element signature="e#6#69#0#PHP" expanded="true" />
             <element signature="e#96#116#0#PHP" expanded="true" />
