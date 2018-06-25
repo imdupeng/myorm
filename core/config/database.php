@@ -8,6 +8,6 @@
 $database = array(
     'DSN'=>'mysql:host=127.0.0.1;dbname=weshop;port=3306',
     'USERNAME'=>'root',
-    'PASSWD'=>'mty2n5123'
+    'PASSWD'=>'123456'
 );
 return $database;
