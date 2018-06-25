@@ -97,7 +97,7 @@ class userController extends \core\myorm_core
             $code = '255';
             $message = '未登录，请登录！';
             $data = [];
-            return Response::json($status, $code, $message, $data);
+            return response()->json($status, $code, $message, $data);
         }
 
         $data = $_REQUEST;
