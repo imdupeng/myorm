@@ -27,12 +27,16 @@ class userController extends \core\myorm_core
         $appConfig = config::allconfig('weixin');//读取微信配置文件
         $appid = $appConfig['appid'];
         $appsecret = $appConfig['appsecret'];
-        $json = 'https://api.weixin.qq.com/sns/jscode2session?appid=' . $appid . '&secret=' . $appsecret . '&js_code=' . $code . '&grant_type=authorization_code';
+        $json = 'https://api.weixin.qq.com/sns/jscode2session?appid='.$appid.'&secret='.$appsecret.'&js_code='.$code.'&grant_type=authorization_code';
         header("Content-Type: application/json");
         $data = file_get_contents($json);
+        //$data = '{"session_key":"ZZK4m9oqtVlKtEz87SVURQ==","openid":"o5N5M5fJua3IkxE5V82kVZ1Tcs3I"}';
         $data = json_decode($data, true);
+		if(empty($data['openid'])){
+			return null;
+		}
         $openid = $data['openid'];
-        return $openid;
+		return $data['openid'];
     }
 
 
@@ -131,10 +135,9 @@ class userController extends \core\myorm_core
     public function is_user_exist($openid = '')
     {
         $pdo = new \core\lib\model();
-        $stmt = $pdo->prepare("select id from user where open_id=?");
-        $stmt->bindValue(1, $openid);
-        $stmt->execute();
-        $row_count = $stmt->rowCount();
+        $stmt = $pdo->prepare("select id from user where open_id = :open_id");
+        $stmt->execute(array('open_id'=>$openid));
+        $row_count = $stmt->fetchALL();
         if ($row_count) {
             return true;
         } else {
@@ -163,7 +166,7 @@ class userController extends \core\myorm_core
                 $code = $data['code'];//wx.login得到的code
                 $openid = $this->get_openid($code);
                 if ($openid) {
-                    $is_user_exist = is_user_exist($openid);
+                    $is_user_exist = $this->is_user_exist($openid);
                     if ($is_user_exist) {//用户存在，返回用户openid
                         session_start();
                         session('openid', $openid);
@@ -172,14 +175,14 @@ class userController extends \core\myorm_core
                         $message = '登录成功！';
                         $data = ['openid' => $openid];
                     } else {//用户不存在，添加用户，返回用户id
+					//echo $openid;exit;
                         $pdo = new \core\lib\model;
-                        $stmt = $pdo->prepare("insert into user(open_id) values ?");
-                        $stmt->bindValue(1, $openid);
-                        $stmt->execute();
+                        $stmt = $pdo->prepare("insert into user(open_id) values (:open_id)");
+                        $stmt->execute(array('open_id'=>'123'));
                         $row_count = $stmt->rowCount();
                         if ($row_count) {
                             session_start();
-                            session('openid', $openid);
+                            $_SESSION['openid'] = $openid;
                             $status = true;
                             $code = '251';
                             $message = '新用户注册成功！';
