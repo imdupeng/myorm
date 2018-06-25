@@ -4,11 +4,14 @@
  * Date: 2018/6/5
  * Time: 21:40
  */
+
 namespace app\controller;
+
 use core\lib\config;
 use app\Myclass\Response;
 
-class userController extends \core\myorm_core {
+class userController extends \core\myorm_core
+{
 
     public function __construct()
     {
@@ -18,71 +21,123 @@ class userController extends \core\myorm_core {
     /*
      * 获取微信open_id
      * */
-    public function get_openid($code=''){
+    public function get_openid($code = '')
+    {
 //        $code = $_GET['code'];//wx.login得到的code
         $appConfig = config::allconfig('weixin');//读取微信配置文件
         $appid = $appConfig['appid'];
         $appsecret = $appConfig['appsecret'];
-        $json = 'https://api.weixin.qq.com/sns/jscode2session?appid='.$appid.'&secret='.$appsecret.'&js_code='.$code.'&grant_type=authorization_code';
+        $json = 'https://api.weixin.qq.com/sns/jscode2session?appid=' . $appid . '&secret=' . $appsecret . '&js_code=' . $code . '&grant_type=authorization_code';
         header("Content-Type: application/json");
         $data = file_get_contents($json);
-        $data = json_decode($data,true);
+        $data = json_decode($data, true);
         $openid = $data['openid'];
         return $openid;
+    }
+
+
+    /*
+     * 上传头像
+     * */
+    public function uploudimage()
+    {
+        //var_dump($_FILES["file"]);
+        //array(5) { ["name"]=> string(17) "56e79ea2e1418.jpg" ["type"]=> string(10) "image/jpeg" ["tmp_name"]=> string(43) "C:\Users\asus\AppData\Local\Temp\phpD07.tmp" ["error"]=> int(0) ["size"]=> int(454445) }
+
+        //判断上传的文件是否出错,是的话，返回错误
+        if ($_FILES["file"]["error"]) {
+            echo $_FILES["file"]["error"];
+            return Response::json(false, 251, '文件上传失败', 0);
+//            return [false, 251, '文件上传失败', 0];
+        } else {
+            //没有出错
+            //加限制条件
+            //判断上传文件类型为png或jpg且大小不超过1024000B
+            if (($_FILES["file"]["type"] == "image/png" || $_FILES["file"]["type"] == "image/jpeg") && $_FILES["file"]["size"] < 10240000) {
+                //防止文件名重复
+                $name = $_FILES["file"]["name"];
+                $filename = "./static/images" . time() . $_FILES["file"]["name"];
+                //转码，把utf-8转成gb2312,返回转换后的字符串， 或者在失败时返回 FALSE。
+//                $filename = iconv("UTF-8", "gb2312", $filename);
+                //检查文件或目录是否存在
+                if (file_exists($filename)) {
+                    echo "该文件已存在";
+                } else {
+                    //保存文件,   move_uploaded_file 将上传的文件移动到新位置
+                    move_uploaded_file($_FILES["file"]["tmp_name"], $filename);//将临时地址移动到指定地址
+                    //写入image表
+                    $pdo = new \core\lib\model();
+                    $stmt = $pdo->prepare("insert into image(path,file_name) values (?,?)");
+                    $stmt->bindValue(1, $filename);
+                    $stmt->bindValue(2, $name);
+                    $stmt->execute();
+                    $addId = $stmt->lastInsertId();
+                    return Response::json(true, 250, '文件上传成功', $addId);
+//                    return [true, 250, '文件上传成功', $addId];
+                }
+            } else {
+                return Response::json(false, 252, '文件类型不对', 0);
+//                return [false, 252, '文件类型不对', 0];
+            }
+        }
     }
 
     /*
      * user/add_user
      * 更新用户资料
      * */
-    public function update_user(){
+    public function update_user()
+    {
         if (empty($_SESSION['open_id'])) {
             $status = false;
             $code = '255';
             $message = '未登录，请登录！';
             $data = [];
-            return response()->json($status,$code,$message,$data);
+            return response()->json($status, $code, $message, $data);
         }
 
-            $data = $_REQUEST;
-            $pdo = new \core\lib\model();
-            $stmt = $pdo->prepare("update user set(avalon,name,phone,disable)values(?,?,?,?) where openid=?");
-            $stmt->bindValue(1, $data['avalon']);
-            $stmt->bindValue(2, $data['name']);
-            $stmt->bindValue(5, $openid);
-            $stmt->bindValue(3, $data['phone']);
-            $stmt->bindValue(4, $data['disable']);
-            $stmt->execute();
-            $addId = $stmt->lastInsertId();
-//        $count = $stmt->rowCount();//受影响行数
+        $data = $_REQUEST;
+        $avalon = uploudimage($_REQUEST['avalon']);
+
+        $pdo = new \core\lib\model();
+        $stmt = $pdo->prepare("update user set(avalon,name,phone,disable)values(?,?,?,?) where openid=?");
+        $stmt->bindValue(1, $data['avalon']);
+        $stmt->bindValue(2, $data['name']);
+        $stmt->bindValue(5, $_SESSION['open_id']);
+        $stmt->bindValue(3, $data['phone']);
+        $stmt->bindValue(4, $data['disable']);
+        $stmt->execute();
+//            $addId = $stmt->lastInsertId();
+        $count = $stmt->rowCount();//受影响行数
 //        echo 'prepare方法影响行数：'.$count;
-            if ($addId) {
-                $status = true;
-                $code = '201';
-                $message = '更新用户成功！';
-                $data = $addId;
-            } else {
-                $status = true;
-                $code = '252';
-                $message = '更新用户失败！';
-                $data = [];
-            }
-        
-        return Response::json($status,$code,$message,$data);
+        if ($addId) {
+            $status = true;
+            $code = '250';
+            $message = '更新用户成功！';
+            $data = $count;
+        } else {
+            $status = true;
+            $code = '251';
+            $message = '更新用户失败！';
+            $data = [];
+        }
+
+        return Response::json($status, $code, $message, $data);
     }
 
     /*
      * 判断用户是否存在
      * */
-    public function is_user_exist($openid=''){
+    public function is_user_exist($openid = '')
+    {
         $pdo = new \core\lib\model();
         $stmt = $pdo->prepare("select id from user where open_id=?");
         $stmt->bindValue(1, $openid);
         $stmt->execute();
         $row_count = $stmt->rowCount();
-        if ($row_count){
+        if ($row_count) {
             return true;
-        }else{
+        } else {
             return false;
         }
     }
@@ -94,18 +149,19 @@ class userController extends \core\myorm_core {
      * 获取token：md5($openid+$time)
      * 
      * */
-    public function user_login(){
-        if ($_SESSION['openid']) {
+    public function user_login()
+    {
+        if (!empty($_SESSION['openid'])) {
             //已经登录
             $status = true;
             $code = '200';
             $message = '已经登录过了！';
-            $data = ['openid'=>$openid];
-        }else{
+            $data = ['openid' => $openid];
+        } else {
             $data = $_REQUEST;
-            $code = $data['code'];//wx.login得到的code
-            if (!empty($code)) {
-                $openid = get_openid($code);
+            if (!empty($data['code'])) {
+                $code = $data['code'];//wx.login得到的code
+                $openid = $this->get_openid($code);
                 if ($openid) {
                     $is_user_exist = is_user_exist($openid);
                     if ($is_user_exist) {//用户存在，返回用户openid
@@ -114,7 +170,7 @@ class userController extends \core\myorm_core {
                         $status = true;
                         $code = '200';
                         $message = '登录成功！';
-                        $data = ['openid'=>$openid];
+                        $data = ['openid' => $openid];
                     } else {//用户不存在，添加用户，返回用户id
                         $pdo = new \core\lib\model;
                         $stmt = $pdo->prepare("insert into user(open_id) values ?");
@@ -125,14 +181,14 @@ class userController extends \core\myorm_core {
                             session_start();
                             session('openid', $openid);
                             $status = true;
-                            $code = '250';
+                            $code = '251';
                             $message = '新用户注册成功！';
-                            $data = ['openid'=>$openid];
+                            $data = ['openid' => $openid];
                         } else {
                             $status = false;
                             $code = '259';
                             $message = '新用户注册失败！';
-                            $data = ['openid'=>$openid];
+                            $data = ['openid' => $openid];
                         }
                     }
                 } else {
@@ -148,18 +204,19 @@ class userController extends \core\myorm_core {
                 $data = [];
             }
         }
-        return Response::json($status,$code,$message,$data);
+        return Response::json($status, $code, $message, $data);
     }
 
     //注销登录
-    public function logout(){
+    public function logout()
+    {
         unset($_SESSION['openid']);
-                $status = true;
-                $code = '250';
-                $message = '注销成功！';
-                $data = [];
-                Response::json($status, $code, $message, $data);
-        
+        $status = true;
+        $code = '250';
+        $message = '注销成功！';
+        $data = [];
+        Response::json($status, $code, $message, $data);
+
     }
 }
 
