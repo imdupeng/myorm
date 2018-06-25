@@ -41,6 +41,7 @@ if (DEBUG){
     ini_set('display_errors','Off');
 }
 
+require_once CORE.'/config/const.php';//引入配置常量
 
 /*
  * 四、加载函数库
