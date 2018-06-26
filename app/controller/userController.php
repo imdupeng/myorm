@@ -27,7 +27,7 @@ class userController extends \core\myorm_core
         $appConfig = config::allconfig('weixin');//读取微信配置文件
         $appid = $appConfig['appid'];
         $appsecret = $appConfig['appsecret'];
-        $json = 'https://api.weixin.qq.com/sns/jscode2session?appid=' . $appid . '&secret=' . $appsecret . '&js_code=' . $code . '&grant_type=authorization_code';
+        $json = 'https://api.weixin.qq.com/sns/jscode2session?appid='.$appid.'&secret='.$appsecret.'&js_code='.$code.'&grant_type=authorization_code';
         header("Content-Type: application/json");
         $data = file_get_contents($json);
         $data = json_decode($data, true);
