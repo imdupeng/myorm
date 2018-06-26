@@ -15,13 +15,8 @@ class userController extends \core\myorm_core
 
     public function __construct()
     {
-        if (empty($_SESSION['open_id'])) {
-            $status = false;
-            $code = '255';
-            $message = '未登录，请登录！';
-            $data = [];
-            return response()->json($status, $code, $message, $data);
-        }
+        //检测用户是否存在
+		
     }
 
     /*
@@ -49,16 +44,20 @@ class userController extends \core\myorm_core
     /*
      * 上传头像
      * */
-    public function uploudimage()
+    public function uploadimage()
     {
-		if (empty($_SESSION['open_id'])) {
+		if(!empty($_POST['PHPSESSID'])){
+			session_id($_POST['PHPSESSID']);
+			session_start();
+		}
+		if (empty($_SESSION['openid'])) {
             $status = false;
-            $code = '255';
+            $code = '257';
             $message = '未登录，请登录！';
             $data = [];
-            return response()->json($status, $code, $message, $data);
+            return Response::json($status, $code, $message, $data);
         }
-        //var_dump($_FILES["file"]);
+        //var_dump($_FILES["file"]);exit;
         //array(5) { ["name"]=> string(17) "56e79ea2e1418.jpg" ["type"]=> string(10) "image/jpeg" ["tmp_name"]=> string(43) "C:\Users\asus\AppData\Local\Temp\phpD07.tmp" ["error"]=> int(0) ["size"]=> int(454445) }
 
         //判断上传的文件是否出错,是的话，返回错误
@@ -84,12 +83,11 @@ class userController extends \core\myorm_core
                     move_uploaded_file($_FILES["file"]["tmp_name"], $filename);//将临时地址移动到指定地址
                     //写入image表
                     $pdo = new \core\lib\model();
-                    $stmt = $pdo->prepare("insert into image(path,file_name) values (?,?)");
-                    $stmt->bindValue(1, $filename);
-                    $stmt->bindValue(2, $name);
-                    $stmt->execute();
-                    $addId = $stmt->lastInsertId();
-                    return Response::json(true, 250, '文件上传成功', $addId);
+                    $stmt = $pdo->prepare("insert into image(path,file_name) values (:filename,:name)");
+					$stmt->execute(array('filename'=>$filename,'name'=>$name));
+                    $addId = $pdo->lastInsertId();
+					$data = ['imgid'=>$addId];
+                    return Response::json(true, 250, '文件上传成功', $data);
 //                    return [true, 250, '文件上传成功', $addId];
                 }
             } else {
@@ -105,25 +103,32 @@ class userController extends \core\myorm_core
      * */
     public function update_user()
     {
-        if (empty($_SESSION['open_id'])) {
+        
+		if(!empty($_POST['PHPSESSID'])){
+			session_id($_POST['PHPSESSID']);
+			session_start();
+		}
+		if (empty($_SESSION['openid'])) {
             $status = false;
-            $code = '255';
+            $code = 257;
             $message = '未登录，请登录！';
             $data = [];
-            return response()->json($status, $code, $message, $data);
+            return Response::json($status, $code, $message, $data);
         }
 
         $data = $_REQUEST;
         $avalon = uploudimage($_REQUEST['avalon']);
 
         $pdo = new \core\lib\model();
-        $stmt = $pdo->prepare("update user set(avalon,name,phone,disable)values(?,?,?,?) where openid=?");
-        $stmt->bindValue(1, $data['avalon']);
-        $stmt->bindValue(2, $data['name']);
-        $stmt->bindValue(5, $_SESSION['open_id']);
-        $stmt->bindValue(3, $data['phone']);
-        $stmt->bindValue(4, $data['disable']);
-        $stmt->execute();
+        $stmt = $pdo->prepare("update user set(avalon,name,phone,disable)values(:avalon,:name,:phone,:disable) where openid=:open_id");
+
+        $stmt->execute([
+			'avalon'=>$data['avalon'],
+			'name'=>$data['name'],
+			'phone'=>$data['phone'],
+			'disable'=>$data['disable'],
+			'open_id'=>$_SESSION['open_id']
+		]);
 //            $addId = $stmt->lastInsertId();
         $count = $stmt->rowCount();//受影响行数
 //        echo 'prepare方法影响行数：'.$count;
