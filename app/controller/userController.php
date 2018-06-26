@@ -15,7 +15,13 @@ class userController extends \core\myorm_core
 
     public function __construct()
     {
-        //检测用户是否存在
+        if (empty($_SESSION['open_id'])) {
+            $status = false;
+            $code = '255';
+            $message = '未登录，请登录！';
+            $data = [];
+            return response()->json($status, $code, $message, $data);
+        }
     }
 
     /*
@@ -45,6 +51,13 @@ class userController extends \core\myorm_core
      * */
     public function uploudimage()
     {
+		if (empty($_SESSION['open_id'])) {
+            $status = false;
+            $code = '255';
+            $message = '未登录，请登录！';
+            $data = [];
+            return response()->json($status, $code, $message, $data);
+        }
         //var_dump($_FILES["file"]);
         //array(5) { ["name"]=> string(17) "56e79ea2e1418.jpg" ["type"]=> string(10) "image/jpeg" ["tmp_name"]=> string(43) "C:\Users\asus\AppData\Local\Temp\phpD07.tmp" ["error"]=> int(0) ["size"]=> int(454445) }
 
@@ -161,7 +174,10 @@ class userController extends \core\myorm_core
             $message = '已经登录过了！';
             $data = ['openid' => $openid];
         } else {
-            $data = $_REQUEST;
+            $data = $_POST;
+			if(!is_array($data)){
+				$pdata = json_decode($data);
+			}
             if (!empty($data['code'])) {
                 $code = $data['code'];//wx.login得到的code
                 $openid = $this->get_openid($code);
