@@ -41,9 +41,9 @@ class productController extends \core\myorm_core
         $param  = [];
         $keywords = (string)($_REQUEST['keywords'] ?? '');
         if ($keywords) {
-            [$filter1, $paramName, $param] = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
+            [$filter1, $paramName, $search] = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
             $filters[] = $filter1;
-            $param[$paramName] = $keywords;
+            $param[$paramName] = $search;
         }
 
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
@@ -189,10 +189,10 @@ class productController extends \core\myorm_core
         $sql2 = "
         select image.id, image.path as url
          from image 
-         left join goods_image on goods_image.goods_id = goods.id
+         left join goods_image on goods_image.image_id = image.id
         where goods_image.goods_id = :goods_id
         ";
-        $param = ['goods_id' => $goods_id];
+        $param = ['goods_id' => $goodsId];
         
         $stmt = $this->fastQuery($sql2, $param);
 

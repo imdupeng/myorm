@@ -132,7 +132,8 @@ class myorm_core{
         foreach($params as $n => $value) {
             $stmt->bindValue($n, $value);
         }
-        return $stmt->execute();
+        $stmt->execute();
+        return $stmt;
     }
 
 

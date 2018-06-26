@@ -28,7 +28,7 @@ class model extends \PDO{
             parent::__construct($database['DSN'], $database['USERNAME'], $database['PASSWD'], $options);
         } catch (\PDOException $e) {
             // 重新抛出异常 避免网络连接失败等原因连接失败时暴露数据库密码等敏感信息
-            throw new Exception("PDO 连接数据库失败：" . $e->getMessage());
+            throw new \Exception("PDO 连接数据库失败：" . $e->getMessage());
         }
     }
 }

@@ -21,13 +21,9 @@ class Response
         }
         $res = ['status'=>$status,'code'=>$code,'message'=>$message,'data'=>$data];
 
-        if(($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') == 'XMLHttpRequest'
-            || ($_REQUEST['data_format'] ?? 'JSON') == 'JSON'
-        ) {
+
             echo json_encode($res);
-        } else {
-            print_r($res);
-        }
+
         exit;
     }
 
