@@ -14,13 +14,26 @@ class productController extends \core\myorm_core
 {
     public function __construct()
     {
-        //检测用户是否存在
+        //检测是否登录
+        if(!empty($_POST['PHPSESSID'])){
+            session_id($_POST['PHPSESSID']);
+            session_start();
+        }
+        if (empty($_SESSION['openid'])) {
+            $status = false;
+            $code = 257;
+            $message = '未登录，请登录！';
+            $data = [];
+            return Response::json($status, $code, $message, $data);
+        }
     }
 
     /*
      * 获取商品列表,分页
      * @param int $page 第几页
      * @param int $pagesize 每页展示商品数量
+     * @param string $keywords  搜索的关键词
+     * http://118.126.112.43:8080/index.php/product/list
      * */
     public function list()
     {
@@ -51,8 +64,7 @@ class productController extends \core\myorm_core
             select $fields, image.path as image from goods 
               left join goods_image on goods_image.goods_id = goods.id
               left join image on goods_image.image_id = image.id
-             where user_id={$this->userId} 
-               and pstatus=2
+             where pstatus=2
                $filterString
             group by goods.id
             order by orderby desc 
@@ -68,10 +80,13 @@ class productController extends \core\myorm_core
      * 获取商品列表,分页
      * @param int $page 第几页
      * @param int $pagesize 每页展示商品数量
+     * @param string $keywords  搜索的关键词
+     * http://118.126.112.43:8080/index.php/product/mylist
      * */
-    public function list2()
+    public function mylist()
     {
-        [$offset, $pageSize, $page, $data] = $this->pagination();
+
+        [$offset, $pageSize, $page, $data] = $this->pagination('productPagesize');
 
         $fields = implode(', ', [
             'goods.id',
@@ -88,57 +103,37 @@ class productController extends \core\myorm_core
         $param  = [];
         $keywords = (string)($_REQUEST['keywords'] ?? '');
         if ($keywords) {
-            [$filter1, $paramName, $param] = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
+            [$filter1, $paramName, $search] = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
             $filters[] = $filter1;
-            $param[$paramName] = $keywords;
+            $param[$paramName] = $search;
         }
 
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
+        $openid = $_SESSION['openid'];
         $sql2 = "
-            select $fields from goods 
-             where user_id={$this->userId} 
+            select $fields, image.path as image from goods 
+              left join goods_image on goods_image.goods_id = goods.id
+              left join image on goods_image.image_id = image.id
+             where openid='".$openid."' 
                and pstatus=2
                $filterString
+            group by goods.id
             order by orderby desc 
             limit $offset, $pageSize
         ";
-        
         $stmt = $this->fastQuery($sql2, $param);
-
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-        //
-
-        $goods = implode(',', $this->columnOf($data['list'], 'id'));
-
-        $sql2 = "
-        select goods_image.goods_id, image.path as url
-         from image 
-         left join goods_image on goods_image.image_id = image.id
-        where goods_image.goods_id in ($goods)
-        group by goods_image.goods_id 
-        ";
-        $param = [];
-
-        $stmt = $this->fastQuery($sql2, $param);
-
-        $images = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-        // print_r([$data['list'], $images, $this->combineFields($data['list'], 'id', $images, 'goods_id')]);
-        // print_r([$data['list'], $images, $this->combineList($data['list'], 'id', $images, 'goods_id', 'images')]);
-
-        $data['list'] = $this->combineFields($data['list'], 'id', $images, 'goods_id');
-
         return Response::json(true, 350, '查询商品成功', $data);
     }
 
     /*
-     * 获取商品列表,分页
-     * @param int $page 第几页
-     * @param int $pagesize 每页展示商品数量
+     * 获取商品详情
+     * @param int $id 商品id
+     * http://118.126.112.43:8080/index.php/product/view
      * */
     public function view()
     {
+
         $fields = implode(', ', [
             'goods.id',
             'goods.name',
@@ -152,10 +147,10 @@ class productController extends \core\myorm_core
 
         $param  = [];
         $pk = (string)($_REQUEST['id'] ?? '');
-
+        $openid = $_SESSION['openid'];
         $sql2 = "
             select $fields from goods
-             where user_id={$this->userId} 
+             where openid='".$openid."' 
                and pstatus=2
         ";
         
@@ -172,9 +167,9 @@ class productController extends \core\myorm_core
     }
 
     /*
-     * 获取商品列表,分页
-     * @param int $page 第几页
-     * @param int $pagesize 每页展示商品数量
+     * 获取商品图片
+     * @param int $id 商品id
+     * http://118.126.112.43:8080/index.php/product/images
      * */
     public function images()
     {
@@ -199,51 +194,24 @@ class productController extends \core\myorm_core
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
-    public function test()
-    {
-        // 'id'
-        $_REQUEST['data'] = [
-            'user_id' => 1,
-            'name' => 'demo123',
-            'purchase_price' => 1,
-            'wholesale_price' =>2,
-            'retail_price' => 3,
-            'pstatus' => 2
-        ];
-        // $this->create();
-
-
-        // 'id'
-        $_REQUEST['data'] = [
-            'user_id' => 1,
-            'name' => 'demo123-1234',
-            'purchase_price' => 10,
-            'wholesale_price' =>20,
-            'retail_price' => 30,
-            'pstatus' => 20
-            ];
-        $_REQUEST['id'] = 6;
-        // $this->update();
-    
-        $this->delete();
-    }
 
     /*
      * 商品创建
      * */
     public function create()
     {
-        $data = (array)($_REQUEST['data'] ?? []);
+        $Rdata = (array)($_REQUEST ?? []);
 
         //允许外面传入的字段
-        $allowFields = [];
+        $allowFields = ['name','description','vendor_id','purchase_price','wholesale_price','retail_price','pstatus','orderby'];
         
         // 固定值, 补充或覆盖到 $data 中
+        $openid = $_SESSION['openid'];
         $fixed = [
-            'user_id' => $this->userId,
+            'openid' => $openid,
         ];
 
-        [$fields, $values, $data] = $this->dataForCreate($data, $allowFields, $fixed);
+        [$fields, $values, $data] = $this->dataForCreate($Rdata, $allowFields, $fixed);
 
         try {
             $sql = "
@@ -276,19 +244,19 @@ class productController extends \core\myorm_core
 
         $allowFields = []; //允许外面传入的字段
         [$fields, $data] = $this->dataForUpdate($data, $allowFields);
-
+        $openid = $_SESSION['openid'];
         try {
             $sql = "
             update goods
                set $fields
              where id = :id 
-               and user_id = :user_id;
+               and openid = :openid;
             ";
 
             // 条件上的参数,注意不要与字段名重复
             $params = [
                 'id' => $pk,
-                'user_id' => $this->userId,
+                'openid' => $openid,
             ];
             
             $effected = $this->fastUpdate($sql, $data, $params);
@@ -371,19 +339,19 @@ class productController extends \core\myorm_core
 
         $allowFields = []; //允许外面传入的字段
         [$fields, $data] = $this->dataForUpdate($data, $allowFields);
-
+        $openid = $_SESSION['openid'];
         try {
             $sql = "
             update goods
                set $fields
              where id = :id 
-               and user_id = :user_id;
+               and openid = :openid;
             ";
 
             // 条件上的参数,注意不要与字段名重复
             $params = [
                 'id' => $pk,
-                'user_id' => $this->userId,
+                'openid' => $openid,
             ];
 
             $effected = $this->fastUpdate($sql, $data, $params);

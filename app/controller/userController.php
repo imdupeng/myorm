@@ -15,8 +15,7 @@ class userController extends \core\myorm_core
 
     public function __construct()
     {
-        //检测用户是否存在
-		
+        //检测是否登录
     }
 
     /*
@@ -46,20 +45,19 @@ class userController extends \core\myorm_core
      * */
     public function uploadimage()
     {
-		if(!empty($_POST['PHPSESSID'])){
-			session_id($_POST['PHPSESSID']);
-			session_start();
-		}
-		if (empty($_SESSION['openid'])) {
+        if(!empty($_POST['PHPSESSID'])){
+            session_id($_POST['PHPSESSID']);
+            session_start();
+        }
+        if (empty($_SESSION['openid'])) {
             $status = false;
-            $code = '257';
+            $code = 257;
             $message = '未登录，请登录！';
             $data = [];
             return Response::json($status, $code, $message, $data);
         }
         //var_dump($_FILES["file"]);exit;
         //array(5) { ["name"]=> string(17) "56e79ea2e1418.jpg" ["type"]=> string(10) "image/jpeg" ["tmp_name"]=> string(43) "C:\Users\asus\AppData\Local\Temp\phpD07.tmp" ["error"]=> int(0) ["size"]=> int(454445) }
-
         //判断上传的文件是否出错,是的话，返回错误
         if ($_FILES["file"]["error"]) {
             echo $_FILES["file"]["error"];
@@ -103,25 +101,21 @@ class userController extends \core\myorm_core
      * */
     public function update_user()
     {
-        
-		if(!empty($_POST['PHPSESSID'])){
-			session_id($_POST['PHPSESSID']);
-			session_start();
-		}
-		if (empty($_SESSION['openid'])) {
+        if(!empty($_POST['PHPSESSID'])){
+            session_id($_POST['PHPSESSID']);
+            session_start();
+        }
+        if (empty($_SESSION['openid'])) {
             $status = false;
             $code = 257;
             $message = '未登录，请登录！';
             $data = [];
             return Response::json($status, $code, $message, $data);
         }
-
         $data = $_REQUEST;
-        $avalon = uploudimage($_REQUEST['avalon']);
-
+        $avalon = $this->uploadimage($_REQUEST['avalon']);
         $pdo = new \core\lib\model();
         $stmt = $pdo->prepare("update user set(avalon,name,phone,disable)values(:avalon,:name,:phone,:disable) where openid=:open_id");
-
         $stmt->execute([
 			'avalon'=>$data['avalon'],
 			'name'=>$data['name'],
@@ -143,7 +137,6 @@ class userController extends \core\myorm_core
             $message = '更新用户失败！';
             $data = [];
         }
-
         return Response::json($status, $code, $message, $data);
     }
 
@@ -190,7 +183,7 @@ class userController extends \core\myorm_core
                     $is_user_exist = $this->is_user_exist($openid);
                     if ($is_user_exist) {//用户存在，返回用户openid
                         session_start();
-                        session('openid', $openid);
+                        $_SESSION["openid"] = $openid;
                         $status = true;
                         $code = '200';
                         $message = '登录成功！';
@@ -199,7 +192,7 @@ class userController extends \core\myorm_core
 					//echo $openid;exit;
                         $pdo = new \core\lib\model;
                         $stmt = $pdo->prepare("insert into user(open_id) values (:open_id)");
-                        $stmt->execute(array('open_id'=>'123'));
+                        $stmt->execute(array('open_id'=>$openid));
                         $row_count = $stmt->rowCount();
                         if ($row_count) {
                             session_start();
@@ -240,7 +233,6 @@ class userController extends \core\myorm_core
         $message = '注销成功！';
         $data = [];
         Response::json($status, $code, $message, $data);
-
     }
 }
 

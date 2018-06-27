@@ -38,7 +38,6 @@ class myorm_core{
         }else{
             die('not fund controller:'.$contrlClass);
         }
-
     }
     /*
      * 自动加载类库

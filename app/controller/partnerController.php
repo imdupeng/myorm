@@ -13,7 +13,18 @@ class partnerController extends \core\myorm_core{
 
     public function __construct()
     {
-        //检测用户是否存在
+        //检测是否登录
+        if(!empty($_POST['PHPSESSID'])){
+            session_id($_POST['PHPSESSID']);
+            session_start();
+        }
+        if (empty($_SESSION['openid'])) {
+            $status = false;
+            $code = 257;
+            $message = '未登录，请登录！';
+            $data = [];
+            return Response::json($status, $code, $message, $data);
+        }
     }
 
 
