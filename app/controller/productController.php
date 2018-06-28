@@ -203,12 +203,13 @@ class productController extends \core\myorm_core
         $Rdata = (array)($_REQUEST ?? []);
 
         //允许外面传入的字段
-        $allowFields = ['name','description','vendor_id','purchase_price','wholesale_price','retail_price','pstatus','orderby'];
+        $allowFields = ['name','description','vendor_id','purchase_price','wholesale_price','retail_price','orderby'];
         
         // 固定值, 补充或覆盖到 $data 中
         $openid = $_SESSION['openid'];
         $fixed = [
             'openid' => $openid,
+            'pstatus'=>2
         ];
 
         [$fields, $values, $data] = $this->dataForCreate($Rdata, $allowFields, $fixed);
@@ -239,26 +240,57 @@ class productController extends \core\myorm_core
      * */
     public function update()
     {
-        $data = (array)($_REQUEST['data'] ?? []);
+        $data = (array)($_REQUEST ?? []);
         $pk = (int)($_REQUEST['id'] ?? 0);
+        $pdata = [];
+        if (!empty($data['category_id'])){
+            $pdata['category_id'] = $data['category_id'];
+        }
+        if (!empty($data['name'])){
+            $pdata['name'] = $data['name'];
+        }
+        if (!empty($data['description'])){
+            $pdata['description'] = $data['description'];
+        }
+        if (!empty($data['vendor_id'])){
+            $pdata['vendor_id'] = $data['vendor_id'];
+        }
+        if (!empty($data['vendor_name'])){
+            $pdata['vendor_name'] = $data['vendor_name'];
+        }
+        if (!empty($data['purchase_price'])){
+            $pdata['purchase_price'] = $data['purchase_price'];
+        }
+        if (!empty($data['wholesale_price'])){
+            $pdata['wholesale_price'] = $data['wholesale_price'];
+        }
+        if (!empty($data['retail_price'])){
+            $pdata['retail_price'] = $data['retail_price'];
+        }
+        if (!empty($data['pstatus'])){
+            $pdata['pstatus'] = $data['pstatus'];
+        }
+        if (!empty($data['orderby'])){
+            $pdata['orderby'] = $data['orderby'];
+        }
 
-        $allowFields = []; //允许外面传入的字段
-        [$fields, $data] = $this->dataForUpdate($data, $allowFields);
-        $openid = $_SESSION['openid'];
+        $allowFields = ['category_id','name','description','vendor_id','vendor_name','purchase_price','wholesale_price','retail_price','pstatus','orderby']; //允许外面传入的字段
+        [$fields, $data] = $this->dataForUpdate($pdata, $allowFields);
+        $Openid = $_SESSION['openid'];
+
         try {
             $sql = "
             update goods
                set $fields
              where id = :id 
-               and openid = :openid;
+               and openid = '".$Openid."' 
             ";
 
             // 条件上的参数,注意不要与字段名重复
-            $params = [
+            $params1 = [
                 'id' => $pk,
-                'openid' => $openid,
             ];
-            
+            $params = array_merge($params1,$pdata);
             $effected = $this->fastUpdate($sql, $data, $params);
 
             // 处理图片
@@ -327,6 +359,7 @@ class productController extends \core\myorm_core
 
     /*
      * 删除商品,修改商品状态为4
+     * http://118.126.112.43:8080/index.php/product/delete
      * */
     public function delete()
     {
@@ -360,7 +393,7 @@ class productController extends \core\myorm_core
 
                 return Response::json(true, 350, '商品删除成功', $pk);
             } else {
-                return Response::error(true, 351, '商品删除失败', $pk);
+                return Response::error(false, 351, '商品删除失败', $pk);
             }
         } catch (Exception $e) {
             return Response::exception(351, $e);

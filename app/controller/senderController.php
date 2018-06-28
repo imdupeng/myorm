@@ -29,19 +29,35 @@ class senderController extends \core\myorm_core{
 
 
     /*
-     * 获取伙伴列表,分页
+     * 获取发货人列表,分页
      * @param int $page 第几页
-     * @param int $pagesize 每页伙伴数量
-     * @param int $type 伙伴类型 2客户3代理商4厂商5已删除
-     * http://myorm.com/index.php/partner/list/type/2/page/1/pagesize/5
+     * @param int $pagesize 每页发货人数量
+     * @param string $keywords  搜索的关键词
+     * http://118.126.112.43:8080/index.php/sender/list
      * */
     public function list(){
         [$offset, $pageSize, $page, $data] = $this->pagination('partnerPagesize');
-//        $loginOpenid = $_SESSION['openid'];
-        $user_id = $this->userId ;
-        $sql2 = "
-        select * from sender where user_id=$user_id and status=2 limit $offset,$pageSize";
-        $stmt = $this->fastQuery($sql2);
+        $openid = $_SESSION['openid'];
+        $fields = implode(', ', [
+            'id',
+            'name',
+            'phone',
+            'deleted_at',
+            'status',
+        ]);
+
+        $filters = [];
+        $param  = [];
+        $keywords = (string)($_REQUEST['keywords'] ?? '');
+        if ($keywords) {
+            [$filter1, $paramName, $search] = $this->fulltextSearch(['name', 'phone'], $keywords, 'keywords');
+            $filters[] = $filter1;
+            $param[$paramName] = $search;
+        }
+        $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
+
+        $sql2 = "select $fields from sender where openid='".$openid."' and status=2 $filterString limit $offset,$pageSize";
+        $stmt = $this->fastQuery($sql2,$param);
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return Response::json(true,350,'查询伙伴成功',$data);
     }
@@ -49,18 +65,19 @@ class senderController extends \core\myorm_core{
    
 
     /*
-     * 添加伙伴
+     * 添加发货人
+     * http://118.126.112.43:8080/index.php/sender/create
      * */
     public function create(){
-        $data = $_REQUEST['data'] ?? [];
-//        $data = $_REQUEST ?? [];//方便get提交测试
+        $data = (array)($_REQUEST ?? []);
 
         //允许外面传入的字段
-        $allowFields = [];
+        $allowFields = ['name','phone','status'];
         
         // 固定值, 补充或覆盖到 $data 中
+        $openid = $_SESSION['openid'];
         $fixed = [
-            'user_id' => $this->userId,
+            'openid' => $openid,
             'status' => 2,
         ];
 
@@ -85,28 +102,40 @@ class senderController extends \core\myorm_core{
 
     /*
      * 更新伙伴信息
+     * http://118.126.112.43:8080/index.php/sender/update
      * */
     public function update(){
-        $data = $_REQUEST['data'] ?? [];
-        $pk = $_REQUEST['id'] ?? 0;
+        $data = (array)($_REQUEST ?? []);
+        $pk = (int)($_REQUEST['id'] ?? 0);
 
-        $allowFields = []; //允许外面传入的字段
+        $pdata = [];
+        if (!empty($data['name'])){
+            $pdata['name'] = $data['name'];
+        }
+        if (!empty($data['phone'])){
+            $pdata['phone'] = $data['phone'];
+        }
+        if (!empty($data['status'])){
+            $pdata['status'] = $data['status'];
+        }
+
+        $allowFields = ['name','phone','status']; //允许外面传入的字段
         [$fields, $data] = $this->dataForUpdate($data, $allowFields);
-
+        $Openid = $_SESSION['openid'];
         try {
             $sql = "
             update sender
                set $fields
              where id = :id 
-               and user_id = :user_id;
+               and openid = '".$Openid."'
             ";
 
             // 条件上的参数,注意不要与字段名重复
-            $params = [
+            $params1 = [
                 'id' => $pk,
-                'user_id' => $this->userId,
             ];
-            
+            $params = array_merge($params1,$pdata);
+
             $effected = $this->fastUpdate($sql, $data, $params);
 
             return Response::json(true, 350, '发货人信息更新成功', $pk);
@@ -119,36 +148,36 @@ class senderController extends \core\myorm_core{
 
     /*
      * 删除发货人信息
+     * http://118.126.112.43:8080/index.php/sender/delete
      * */
     public function delete(){
         $pk = $_REQUEST['id'] ?? 0;
 
         $data = [
             'deleted_at' => time(),
-            'status' => 3,
+            'status' => 4,
         ];
 
         $allowFields = []; //允许外面传入的字段
         [$fields, $data] = $this->dataForUpdate($data, $allowFields);
-
+        $Openid = $_SESSION['openid'];
         try {
             $sql = "
-            update partner
+            update sender
                set $fields
              where id = :id 
-               and user_id = :user_id;
+               and openid = '".$Openid."'
             ";
             // 条件上的参数,注意不要与字段名重复
             $params = [
                 'id' => $pk,
-                'user_id' => $this->userId,
             ];
 
             $effected = $this->fastUpdate($sql, $data, $params);
             if ($effected) {
                 return Response::json(true, 350, '伙伴删除成功', $pk);
             } else {
-                return Response::error(true, 351, '伙伴删除失败', $pk);
+                return Response::error(false, 351, '伙伴删除失败', $pk);
             }
 
         } catch(Exception $e) {

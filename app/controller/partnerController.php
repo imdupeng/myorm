@@ -148,7 +148,7 @@ class partnerController extends \core\myorm_core{
             if ($effected) {
                 return Response::json(true, 350, '伙伴删除成功', $pk);
             } else {
-                return Response::error(true, 351, '伙伴删除失败', $pk);
+                return Response::error(false, 351, '伙伴删除失败', $pk);
             }
 
         } catch(Exception $e) {
