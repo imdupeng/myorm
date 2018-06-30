@@ -37,12 +37,35 @@ class partnerController extends \core\myorm_core{
      * */
     public function list(){
         [$offset, $pageSize, $page, $data] = $this->pagination('partnerPagesize');
-//        $loginOpenid = $_SESSION['openid'];
-        $user_id = $this->userId ;
+        $openid = $_SESSION['openid'];
         $type = $_REQUEST['type'];
-        $sql2 = "
-        select * from partner where user_id=$user_id and type=$type limit $offset,$pageSize";
-        $stmt = $this->fastQuery($sql2);
+        $status = $_REQUEST['status'];
+
+        $fields = implode(', ', [
+            'id',
+            'type',
+            'wechat',
+            'name',
+            'phone',
+            'note',
+            'status',
+        ]);
+        $filters = [];
+        $param  = [];
+        $keywords = (string)($_REQUEST['keywords'] ?? '');
+        if ($keywords) {
+            [$filter1, $paramName, $search] = $this->fulltextSearch(['name', 'phone','wechat'], $keywords, 'keywords');
+            $filters[] = $filter1;
+            $param[$paramName] = $search;
+        }
+        $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
+
+        $sql2 = "select $fields from partner where openid='".$openid."' 
+               and status='".$status."' and type='".$type."'
+               $filterString 
+             limit $offset, $pageSize
+        ";
+        $stmt = $this->fastQuery($sql2,$param);
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return Response::json(true,350,'查询伙伴成功',$data);
     }
@@ -51,20 +74,21 @@ class partnerController extends \core\myorm_core{
 
     /*
      * 添加伙伴
+     * http://118.126.112.43:8080/index.php/partner/create
      * */
     public function create(){
-        $data = $_REQUEST['data'] ?? [];
-//        $data = $_REQUEST ?? [];//方便get提交测试
-
+        $Rdata = (array)($_REQUEST ?? []);
         //允许外面传入的字段
-        $allowFields = [];
-        
+        $allowFields = ['openid','type','wechat','name','phone','note','status'];
+
         // 固定值, 补充或覆盖到 $data 中
+        $openid = $_SESSION['openid'];
         $fixed = [
-            'user_id' => $this->userId,
+            'openid' => $openid,
+            'status' => 2,
         ];
 
-        $data3 = [$fields, $values, $data] = $this->dataForCreate($data, $allowFields, $fixed);
+        $data3 = [$fields, $values, $data] = $this->dataForCreate($Rdata, $allowFields, $fixed);
 
         try {
             $sql = "
@@ -85,27 +109,50 @@ class partnerController extends \core\myorm_core{
 
     /*
      * 更新伙伴信息
+     * http://118.126.112.43:8080/index.php/partner/update
      * */
     public function update(){
-        $data = $_REQUEST['data'] ?? [];
-        $pk = $_REQUEST['id'] ?? 0;
+        $data = (array)($_REQUEST ?? []);
+        $pk = (int)($_REQUEST['id'] ?? 0);
 
-        $allowFields = []; //允许外面传入的字段
+        $pdata = [];
+        if (!empty($data['name'])){
+            $pdata['name'] = $data['name'];
+        }
+        if (!empty($data['phone'])){
+            $pdata['phone'] = $data['phone'];
+        }
+        if (!empty($data['status'])){
+            $pdata['status'] = $data['status'];
+        }
+        if (!empty($data['type'])){
+            $pdata['type'] = $data['type'];
+        }
+        if (!empty($data['wechat'])){
+            $pdata['wechat'] = $data['wechat'];
+        }
+        if (!empty($data['note'])){
+            $pdata['note'] = $data['note'];
+        }
+
+
+        $allowFields = ['name','phone','status','type','wechat','note']; //允许外面传入的字段
         [$fields, $data] = $this->dataForUpdate($data, $allowFields);
+        $Openid = $_SESSION['openid'];
 
         try {
             $sql = "
             update partner
                set $fields
              where id = :id 
-               and user_id = :user_id;
+               and openid = '".$Openid."'
             ";
 
             // 条件上的参数,注意不要与字段名重复
-            $params = [
+            $params1 = [
                 'id' => $pk,
-                'user_id' => $this->userId,
             ];
+            $params = array_merge($params1,$pdata);
             
             $effected = $this->fastUpdate($sql, $data, $params);
 
@@ -119,29 +166,30 @@ class partnerController extends \core\myorm_core{
 
     /*
      * 删除伙伴
+     * http://118.126.112.43:8080/index.php/partner/delete
      * */
     public function delete(){
         $pk = $_REQUEST['id'] ?? 0;
 
         $data = [
             'deleted_at' => time(),
-            'type' => 5,
+            'status' => 4,
         ];
 
         $allowFields = []; //允许外面传入的字段
         [$fields, $data] = $this->dataForUpdate($data, $allowFields);
+        $Openid = $_SESSION['openid'];
 
         try {
             $sql = "
             update partner
                set $fields
              where id = :id 
-               and user_id = :user_id;
+               and openid = '".$Openid."'
             ";
             // 条件上的参数,注意不要与字段名重复
             $params = [
                 'id' => $pk,
-                'user_id' => $this->userId,
             ];
 
             $effected = $this->fastUpdate($sql, $data, $params);
@@ -155,6 +203,38 @@ class partnerController extends \core\myorm_core{
             return Response::exception(351, $e);
         }
 
+    }
+
+    /*
+     * 通过id查看伙伴
+     * http://118.126.112.43:8080/index.php/partner/view
+     * */
+    public function view()
+    {
+        $fields = implode(', ', [
+            'id',
+            'name',
+            'phone',
+            'type',
+            'wechat',
+            'note',
+            'status',
+        ]);
+
+        $param  = [];
+        $pk = (string)($_REQUEST['id'] ?? '');
+        $openid = $_SESSION['openid'];
+        $sql2 = "
+            select $fields from partner
+             where openid='".$openid."' 
+               and id=$pk
+        ";
+
+        $stmt = $this->fastQuery($sql2, $param);
+
+        $data = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return Response::json(true, 350, '查询伙伴地址成功', $data);
     }
 
 }

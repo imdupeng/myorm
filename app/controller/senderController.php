@@ -36,7 +36,7 @@ class senderController extends \core\myorm_core{
      * http://118.126.112.43:8080/index.php/sender/list
      * */
     public function list(){
-        [$offset, $pageSize, $page, $data] = $this->pagination('partnerPagesize');
+        [$offset, $pageSize, $page, $data] = $this->pagination('senderPagesize');
         $openid = $_SESSION['openid'];
         $fields = implode(', ', [
             'id',
@@ -62,6 +62,34 @@ class senderController extends \core\myorm_core{
         return Response::json(true,350,'查询伙伴成功',$data);
     }
 
+    /*
+     * 查看发货人详情
+     * */
+    public function view()
+    {
+        $fields = implode(', ', [
+            'id',
+            'name',
+            'phone',
+            'status',
+        ]);
+
+        $param  = [];
+        $pk = (string)($_REQUEST['id'] ?? '');
+        $openid = $_SESSION['openid'];
+        $sql2 = "
+            select $fields from sender
+             where openid='".$openid."' 
+               and id=$pk
+        ";
+
+        $stmt = $this->fastQuery($sql2, $param);
+
+        $data = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return Response::json(true, 350, '查询发货人成功', $data);
+    }
+
    
 
     /*
@@ -69,8 +97,7 @@ class senderController extends \core\myorm_core{
      * http://118.126.112.43:8080/index.php/sender/create
      * */
     public function create(){
-        $data = (array)($_REQUEST ?? []);
-
+        $Rdata = (array)($_REQUEST ?? []);
         //允许外面传入的字段
         $allowFields = ['name','phone','status'];
         
@@ -81,7 +108,7 @@ class senderController extends \core\myorm_core{
             'status' => 2,
         ];
 
-        $data3 = [$fields, $values, $data] = $this->dataForCreate($data, $allowFields, $fixed);
+        $data3 = [$fields, $values, $data] = $this->dataForCreate($Rdata, $allowFields, $fixed);
 
         try {
             $sql = "
@@ -101,7 +128,7 @@ class senderController extends \core\myorm_core{
     }
 
     /*
-     * 更新伙伴信息
+     * 更新发货人信息
      * http://118.126.112.43:8080/index.php/sender/update
      * */
     public function update(){
@@ -175,9 +202,9 @@ class senderController extends \core\myorm_core{
 
             $effected = $this->fastUpdate($sql, $data, $params);
             if ($effected) {
-                return Response::json(true, 350, '伙伴删除成功', $pk);
+                return Response::json(true, 350, '发货人删除成功', $pk);
             } else {
-                return Response::error(false, 351, '伙伴删除失败', $pk);
+                return Response::error(false, 351, '发货人删除失败', $pk);
             }
 
         } catch(Exception $e) {
