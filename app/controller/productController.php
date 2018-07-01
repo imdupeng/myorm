@@ -49,6 +49,7 @@ class productController extends \core\myorm_core
             'goods.wholesale_price',
             'goods.retail_price'
         ]);
+        $openid = $_SESSION['openid'];
 
         $filters = [];
         $param  = [];
@@ -57,6 +58,11 @@ class productController extends \core\myorm_core
             [$filter1, $paramName, $search] = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
             $filters[] = $filter1;
             $param[$paramName] = $search;
+
+            //添加搜索记录
+            $sql3 = "insert into search_history (openid,keywords,created_at) values ($openid,$keywords,time())";
+            $param3= [];
+            $stmt = $this->fastQuery($sql3, $param3);
         }
 
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
@@ -98,6 +104,8 @@ class productController extends \core\myorm_core
             'goods.wholesale_price',
             'goods.retail_price'
         ]);
+        $openid = $_SESSION['openid'];
+
 
         $filters = [];
         $param  = [];
@@ -106,10 +114,14 @@ class productController extends \core\myorm_core
             [$filter1, $paramName, $search] = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
             $filters[] = $filter1;
             $param[$paramName] = $search;
+
+            //添加搜索记录
+            $sql3 = "insert into search_history (openid,keywords,created_at) values ($openid,$keywords,time())";
+            $param3= [];
+            $stmt = $this->fastQuery($sql3, $param3);
         }
 
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
-        $openid = $_SESSION['openid'];
         $sql2 = "
             select $fields, image.path as image from goods 
               left join goods_image on goods_image.goods_id = goods.id
@@ -398,5 +410,18 @@ class productController extends \core\myorm_core
         } catch (Exception $e) {
             return Response::exception(351, $e);
         }
+    }
+
+
+    /*
+     * 历史搜索记录
+     * */
+    public function search_history(){
+        $openid = $_SESSION['openid'];
+        $sql2 = "select keywords from search_history where openid='".$openid."' order by created_at desc";
+        $param= [];
+        $stmt = $this->fastQuery($sql2, $param);
+        $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return Response::json(true, 350, '查询商品成功', $data);
     }
 }

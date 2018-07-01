@@ -10,6 +10,7 @@ $weixin = array(
     'appsecret'=>'61ec375f147ee21c8a0cbe145ed05241',
     'productPagesize'=>10,
     'partnerPagesize'=>10,
-    'senderPagesize'=>10
+    'senderPagesize'=>10,
+    'billPagesize'=>10
 );
 return $weixin;
