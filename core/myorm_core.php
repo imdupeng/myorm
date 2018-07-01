@@ -109,11 +109,11 @@ class myorm_core{
     {
         if (FULLTEXT_SUPPORT) {
             $match = implode(',', $fields);
-            $filter = 'MATCH ($match) AGAINST (:{$paramName} IN BOOLEAN MODE)';
+            $filter = "MATCH ($match) AGAINST (:{$paramName} IN BOOLEAN MODE)";
             $param = $keywords;
         } else {
             foreach ($fields as $field) {
-                $filter[] = '{$field} like :{$paramName}';
+                $filter[] = "{$field} like :{$paramName}";
             }
             $filter = "(" . implode(' or ', $filter) . ")";
             $param = '%' . $keywords . '%';

@@ -15,7 +15,7 @@ class productController extends \core\myorm_core
     public function __construct()
     {
         //检测是否登录
-        if(!empty($_POST['PHPSESSID'])){
+        if (!empty($_POST['PHPSESSID'])) {
             session_id($_POST['PHPSESSID']);
             session_start();
         }
@@ -60,8 +60,12 @@ class productController extends \core\myorm_core
             $param[$paramName] = $search;
 
             //添加搜索记录
-            $sql3 = "insert into search_history (openid,keywords,created_at) values ($openid,$keywords,time())";
-            $param3= [];
+            $sql3 = "insert into search_history (openid,keywords,created_at) values (?,?,?)";
+            $param3= [
+                1 => $openid,
+                2 => $keywords,
+                3 => time()
+            ];
             $stmt = $this->fastQuery($sql3, $param3);
         }
 
@@ -73,7 +77,7 @@ class productController extends \core\myorm_core
              where pstatus=2
                $filterString
             group by goods.id
-            order by orderby desc 
+            order by orderby desc
             limit $offset, $pageSize
         ";
         $stmt = $this->fastQuery($sql2, $param);
@@ -91,7 +95,6 @@ class productController extends \core\myorm_core
      * */
     public function mylist()
     {
-
         [$offset, $pageSize, $page, $data] = $this->pagination('productPagesize');
 
         $fields = implode(', ', [
@@ -106,7 +109,6 @@ class productController extends \core\myorm_core
         ]);
         $openid = $_SESSION['openid'];
 
-
         $filters = [];
         $param  = [];
         $keywords = (string)($_REQUEST['keywords'] ?? '');
@@ -116,8 +118,12 @@ class productController extends \core\myorm_core
             $param[$paramName] = $search;
 
             //添加搜索记录
-            $sql3 = "insert into search_history (openid,keywords,created_at) values ($openid,$keywords,time())";
-            $param3= [];
+            $sql3 = "insert into search_history (openid,keywords,created_at) values (?,?,?)";
+            $param3= [
+                1 => $openid,
+                2 => $keywords,
+                3 => time()
+            ];
             $stmt = $this->fastQuery($sql3, $param3);
         }
 
@@ -130,7 +136,7 @@ class productController extends \core\myorm_core
                and pstatus=2
                $filterString
             group by goods.id
-            order by orderby desc 
+            order by orderby desc
             limit $offset, $pageSize
         ";
         $stmt = $this->fastQuery($sql2, $param);
@@ -145,7 +151,6 @@ class productController extends \core\myorm_core
      * */
     public function view()
     {
-
         $fields = implode(', ', [
             'goods.id',
             'goods.name',
@@ -221,7 +226,9 @@ class productController extends \core\myorm_core
         $openid = $_SESSION['openid'];
         $fixed = [
             'openid' => $openid,
-            'pstatus'=>2
+            'pstatus' => 2,
+            'last_bill_at' => null,
+            'deleted_at' => null,
         ];
 
         [$fields, $values, $data] = $this->dataForCreate($Rdata, $allowFields, $fixed);
@@ -255,54 +262,55 @@ class productController extends \core\myorm_core
         $data = (array)($_REQUEST ?? []);
         $pk = (int)($_REQUEST['id'] ?? 0);
         $pdata = [];
-        if (!empty($data['category_id'])){
+        if (!empty($data['category_id'])) {
             $pdata['category_id'] = $data['category_id'];
         }
-        if (!empty($data['name'])){
+        if (!empty($data['name'])) {
             $pdata['name'] = $data['name'];
         }
-        if (!empty($data['description'])){
+        if (!empty($data['description'])) {
             $pdata['description'] = $data['description'];
         }
-        if (!empty($data['vendor_id'])){
+        if (!empty($data['vendor_id'])) {
             $pdata['vendor_id'] = $data['vendor_id'];
         }
-        if (!empty($data['vendor_name'])){
+        if (!empty($data['vendor_name'])) {
             $pdata['vendor_name'] = $data['vendor_name'];
         }
-        if (!empty($data['purchase_price'])){
+        if (!empty($data['purchase_price'])) {
             $pdata['purchase_price'] = $data['purchase_price'];
         }
-        if (!empty($data['wholesale_price'])){
+        if (!empty($data['wholesale_price'])) {
             $pdata['wholesale_price'] = $data['wholesale_price'];
         }
-        if (!empty($data['retail_price'])){
+        if (!empty($data['retail_price'])) {
             $pdata['retail_price'] = $data['retail_price'];
         }
-        if (!empty($data['pstatus'])){
+        if (!empty($data['pstatus'])) {
             $pdata['pstatus'] = $data['pstatus'];
         }
-        if (!empty($data['orderby'])){
+        if (!empty($data['orderby'])) {
             $pdata['orderby'] = $data['orderby'];
         }
 
         $allowFields = ['category_id','name','description','vendor_id','vendor_name','purchase_price','wholesale_price','retail_price','pstatus','orderby']; //允许外面传入的字段
         [$fields, $data] = $this->dataForUpdate($pdata, $allowFields);
-        $Openid = $_SESSION['openid'];
+        $openid = $_SESSION['openid'];
 
         try {
             $sql = "
             update goods
                set $fields
              where id = :id 
-               and openid = '".$Openid."' 
+               and openid = :openid;
             ";
 
             // 条件上的参数,注意不要与字段名重复
             $params1 = [
                 'id' => $pk,
+                'openid' => $openid,
             ];
-            $params = array_merge($params1,$pdata);
+            $params = array_merge($params1, $pdata);
             $effected = $this->fastUpdate($sql, $data, $params);
 
             // 处理图片
@@ -416,7 +424,8 @@ class productController extends \core\myorm_core
     /*
      * 历史搜索记录
      * */
-    public function search_history(){
+    public function search_history()
+    {
         $openid = $_SESSION['openid'];
         $sql2 = "select keywords from search_history where openid='".$openid."' order by created_at desc";
         $param= [];
