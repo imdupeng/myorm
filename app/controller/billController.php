@@ -78,7 +78,7 @@ class billController extends \core\myorm_core
         $param  = [];
         $keywords = (string)($_REQUEST['keywords'] ?? '');
         if ($keywords) {
-            [$filter1, $paramName, $search] = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
+            list($filter1, $paramName, $search) = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
             $filters[] = $filter1;
             $param[$paramName] = $search;
 
@@ -154,7 +154,7 @@ class billController extends \core\myorm_core
         $param  = [];
         $keywords = (string)($_REQUEST['keywords'] ?? '');
         if ($keywords) {
-            [$filter1, $paramName, $search] = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
+            list($filter1, $paramName, $search) = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
             $filters[] = $filter1;
             $param[$paramName] = $search;
 
@@ -297,13 +297,13 @@ class billController extends \core\myorm_core
             'created_at'=>$thetime,
         ];
 
-        [$fields, $values, $data] = $this->dataForCreate($Rdata, $allowFields, $fixed);
+        list($fields, $values, $data) = $this->dataForCreate($Rdata, $allowFields, $fixed);
 
         try {
             $sql = "
             insert into bill ($fields) values ($values)
             ";
-            [$effected, $lastId] = $this->fastInsert($sql, $data);
+            list($effected, $lastId) = $this->fastInsert($sql, $data);
 
             // 处理图片
 //            if ($lastId && isset($data['images'])) {
@@ -395,7 +395,7 @@ class billController extends \core\myorm_core
         $allowFields = ['po_from_open_id','po_from_partner_id','address_info_id','sender_info_id','first_bill_id',
             'last_bill_id','description',
             'creator_status','logistics_status','logistics_number','logistics_image_id','receiver_status','send_time']; //允许外面传入的字段
-        [$fields, $data] = $this->dataForUpdate($pdata, $allowFields);
+        list($fields, $data) = $this->dataForUpdate($pdata, $allowFields);
         $Openid = $_SESSION['openid'];
 
         try {
@@ -490,7 +490,7 @@ class billController extends \core\myorm_core
         ];
 
         $allowFields = []; //允许外面传入的字段
-        [$fields, $data] = $this->dataForUpdate($data, $allowFields);
+        list($fields, $data) = $this->dataForUpdate($data, $allowFields);
         $openid = $_SESSION['openid'];
         try {
             $sql = "

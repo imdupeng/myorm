@@ -74,7 +74,7 @@ class productController extends \core\myorm_core{
         $pk = $_REQUEST['id'] ?? 0;
 
         $allowFields = []; //允许外面传入的字段
-        [$fields, $data] = $this->dataForUpdate($data, $allowFields);
+        list($fields, $data) = $this->dataForUpdate($data, $allowFields);
 
         try {
             $sql = "
@@ -112,7 +112,7 @@ class productController extends \core\myorm_core{
         ];
 
         $allowFields = []; //允许外面传入的字段
-        [$fields, $data] = $this->dataForUpdate($data, $allowFields);
+        list($fields, $data) = $this->dataForUpdate($data, $allowFields);
 
         try {
             $sql = "
