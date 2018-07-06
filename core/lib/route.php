@@ -21,10 +21,14 @@ class route
 //        print_r($_SERVER['REQUEST_URI']);exit;
         if (isset($_SERVER['REQUEST_URI']) && $_SERVER['REQUEST_URI']!='/' && $_SERVER['REQUEST_URI']!='/index.php' && $_SERVER['REQUEST_URI']!='/index.php/')
         {
-            //带参数,且参数不为空
-            $real_url = substr($_SERVER['REQUEST_URI'],11);//'/index.php/controller/action'解析出'/controller/action'这样的参数
-            $patharr = explode('/',$real_url);//字符串controller/action转换为数组[ [0] => index,[1] => index];
-            //还要判断是请求的否控制器和方法都存在，例如请求的是'/index.php/controller'没有action
+            // 优先使用 r 参数
+            $patharr = explode('/', $_GET['r'] ?? '');
+            if(empty($patharr)) {
+                //带参数,且参数不为空
+                $real_url = substr($_SERVER['REQUEST_URI'],11);//'/index.php/controller/action'解析出'/controller/action'这样的参数
+                $patharr = explode('/',$real_url);//字符串controller/action转换为数组[ [0] => index,[1] => index];
+                //还要判断是请求的否控制器和方法都存在，例如请求的是'/index.php/controller'没有action
+            }
             if (isset($patharr[0])){
                 $this->contro = $patharr[0];
             }

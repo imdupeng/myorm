@@ -36,7 +36,7 @@ class senderController extends \core\myorm_core{
      * http://118.126.112.43:8080/index.php/sender/list
      * */
     public function list(){
-        [$offset, $pageSize, $page, $data] = $this->pagination('senderPagesize');
+        list($offset, $pageSize, $page, $data) = $this->pagination('senderPagesize');
         $openid = $_SESSION['openid'];
         $fields = implode(', ', [
             'id',
@@ -50,7 +50,7 @@ class senderController extends \core\myorm_core{
         $param  = [];
         $keywords = (string)($_REQUEST['keywords'] ?? '');
         if ($keywords) {
-            [$filter1, $paramName, $search] = $this->fulltextSearch(['name', 'phone'], $keywords, 'keywords');
+            list($filter1, $paramName, $search) = $this->fulltextSearch(['name', 'phone'], $keywords, 'keywords');
             $filters[] = $filter1;
             $param[$paramName] = $search;
         }
@@ -108,13 +108,14 @@ class senderController extends \core\myorm_core{
             'status' => 2,
         ];
 
-        $data3 = [$fields, $values, $data] = $this->dataForCreate($Rdata, $allowFields, $fixed);
-
+        $data3 = $this->dataForCreate($Rdata, $allowFields, $fixed);
+        list($fields, $values, $data) = $data3;
+        
         try {
             $sql = "
             insert into sender ($fields) values ($values)
             ";
-            [$effected, $lastId] = $this->fastInsert($sql, $data);
+            list($effected, $lastId) = $this->fastInsert($sql, $data);
 
             if ($effected) {
                 return Response::json(true, 350, '发货人创建成功', $lastId);
@@ -147,7 +148,7 @@ class senderController extends \core\myorm_core{
         }
 
         $allowFields = ['name','phone','status']; //允许外面传入的字段
-        [$fields, $data] = $this->dataForUpdate($data, $allowFields);
+        list($fields, $data) = $this->dataForUpdate($data, $allowFields);
         $Openid = $_SESSION['openid'];
         try {
             $sql = "
@@ -186,7 +187,7 @@ class senderController extends \core\myorm_core{
         ];
 
         $allowFields = []; //允许外面传入的字段
-        [$fields, $data] = $this->dataForUpdate($data, $allowFields);
+        list($fields, $data) = $this->dataForUpdate($data, $allowFields);
         $Openid = $_SESSION['openid'];
         try {
             $sql = "

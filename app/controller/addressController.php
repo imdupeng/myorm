@@ -35,7 +35,7 @@ class addressController extends \core\myorm_core{
      * http://118.126.112.43:8080/index.php/address/list
      * */
     public function list(){
-        [$offset, $pageSize, $page, $data] = $this->pagination('senderPagesize');
+        list($offset, $pageSize, $page, $data) = $this->pagination('senderPagesize');
         $partner_id = $_REQUEST['partner_id'];
         $fields = implode(', ', [
             'id',
@@ -51,7 +51,7 @@ class addressController extends \core\myorm_core{
         $param  = [];
         $keywords = (string)($_REQUEST['keywords'] ?? '');
         if ($keywords) {
-            [$filter1, $paramName, $search] = $this->fulltextSearch(['name', 'phone'], $keywords, 'keywords');
+            list($filter1, $paramName, $search) = $this->fulltextSearch(['name', 'phone'], $keywords, 'keywords');
             $filters[] = $filter1;
             $param[$paramName] = $search;
         }
@@ -81,13 +81,14 @@ class addressController extends \core\myorm_core{
             'status' => 2,
         ];
 
-        $data3 = [$fields, $values, $data] = $this->dataForCreate($Rdata, $allowFields, $fixed);
+        $data3 = $this->dataForCreate($Rdata, $allowFields, $fixed);
+        list($fields, $values, $data) = $data3;
 
         try {
             $sql = "
             insert into address ($fields) values ($values)
             ";
-            [$effected, $lastId] = $this->fastInsert($sql, $data);
+            list($effected, $lastId) = $this->fastInsert($sql, $data);
 
             if ($effected) {
                 return Response::json(true, 350, '伙伴地址创建成功', $lastId);
@@ -132,7 +133,7 @@ class addressController extends \core\myorm_core{
         }
 
         $allowFields = ['name','phone','status','address','sheng','shi','xian']; //允许外面传入的字段
-        [$fields, $data] = $this->dataForUpdate($data, $allowFields);
+        list($fields, $data) = $this->dataForUpdate($data, $allowFields);
 
         $Openod = $_SESSION['openid'];
 
@@ -173,7 +174,7 @@ class addressController extends \core\myorm_core{
         ];
 
         $allowFields = []; //允许外面传入的字段
-        [$fields, $data] = $this->dataForUpdate($data, $allowFields);
+        list($fields, $data) = $this->dataForUpdate($data, $allowFields);
 
         try {
             $sql = "

@@ -37,7 +37,7 @@ class productController extends \core\myorm_core
      * */
     public function list()
     {
-        [$offset, $pageSize, $page, $data] = $this->pagination('productPagesize');
+        list($offset, $pageSize, $page, $data) = $this->pagination('productPagesize');
 
         $fields = implode(', ', [
             'goods.id',
@@ -55,7 +55,7 @@ class productController extends \core\myorm_core
         $param  = [];
         $keywords = (string)($_REQUEST['keywords'] ?? '');
         if ($keywords) {
-            [$filter1, $paramName, $search] = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
+            list($filter1, $paramName, $search) = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
             $filters[] = $filter1;
             $param[$paramName] = $search;
 
@@ -95,7 +95,7 @@ class productController extends \core\myorm_core
      * */
     public function mylist()
     {
-        [$offset, $pageSize, $page, $data] = $this->pagination('productPagesize');
+        list($offset, $pageSize, $page, $data) = $this->pagination('productPagesize');
 
         $fields = implode(', ', [
             'goods.id',
@@ -113,7 +113,7 @@ class productController extends \core\myorm_core
         $param  = [];
         $keywords = (string)($_REQUEST['keywords'] ?? '');
         if ($keywords) {
-            [$filter1, $paramName, $search] = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
+            list($filter1, $paramName, $search) = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
             $filters[] = $filter1;
             $param[$paramName] = $search;
 
@@ -231,13 +231,13 @@ class productController extends \core\myorm_core
             'deleted_at' => null,
         ];
 
-        [$fields, $values, $data] = $this->dataForCreate($Rdata, $allowFields, $fixed);
+        list($fields, $values, $data) = $this->dataForCreate($Rdata, $allowFields, $fixed);
 
         try {
             $sql = "
             insert into goods ($fields) values ($values)
             ";
-            [$effected, $lastId] = $this->fastInsert($sql, $data);
+            list($effected, $lastId) = $this->fastInsert($sql, $data);
 
             // 处理图片
             if ($lastId && isset($data['images'])) {
@@ -294,7 +294,7 @@ class productController extends \core\myorm_core
         }
 
         $allowFields = ['category_id','name','description','vendor_id','vendor_name','purchase_price','wholesale_price','retail_price','pstatus','orderby']; //允许外面传入的字段
-        [$fields, $data] = $this->dataForUpdate($pdata, $allowFields);
+        list($fields, $data) = $this->dataForUpdate($pdata, $allowFields);
         $openid = $_SESSION['openid'];
 
         try {
@@ -391,7 +391,7 @@ class productController extends \core\myorm_core
         ];
 
         $allowFields = []; //允许外面传入的字段
-        [$fields, $data] = $this->dataForUpdate($data, $allowFields);
+        list($fields, $data) = $this->dataForUpdate($data, $allowFields);
         $openid = $_SESSION['openid'];
         try {
             $sql = "
