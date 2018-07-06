@@ -68,6 +68,11 @@ class billController extends \core\myorm_core
             'bill.send_time'
         ]);
         $openid = $_SESSION['openid'];
+        if (!empty($_REQUEST['creator_status'])){
+            $creator_status = 'and creator_status = '.$_REQUEST['creator_status'];
+        }else{
+            $creator_status = '';
+        }
 
         $filters = [];
         $param  = [];
@@ -89,6 +94,7 @@ class billController extends \core\myorm_core
               left join image on bill.logistics_image_id = image.id
               left join user on bill.creator_open_id=user.open_id
              where creator_open_id ='".$openid."' 
+                $creator_status
                $filterString
             limit $offset, $pageSize
         ";
@@ -99,15 +105,14 @@ class billController extends \core\myorm_core
 
 
     /*
-     * 获取订单列表,分页
+     * 获取代理商订单订单列表,分页
      * @param int $page 第几页
      * @param int $pagesize 每页展示订单数量
      * @param string $keywords  搜索的关键词
-     * http://118.126.112.43:8080/index.php/bill/mylist
+     * http://118.126.112.43:8080/index.php/bill/pobilllist
      * */
-    public function mylist()
+    public function pobilllist()
     {
-
         [$offset, $pageSize, $page, $data] = $this->pagination('billPagesize');
 
         $fields = implode(', ', [
@@ -139,7 +144,11 @@ class billController extends \core\myorm_core
             'bill.send_time'
         ]);
         $openid = $_SESSION['openid'];
-
+        if (!empty($_REQUEST['creator_status'])){
+            $creator_status = 'and creator_status = '.$_REQUEST['creator_status'];
+        }else{
+            $creator_status = '';
+        }
 
         $filters = [];
         $param  = [];
@@ -157,14 +166,12 @@ class billController extends \core\myorm_core
 
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
         $sql2 = "
-            select $fields, image.path as image from goods 
-              left join goods_image on goods_image.goods_id = goods.id
-              left join image on goods_image.image_id = image.id
-             where openid='".$openid."' 
-               and pstatus=2
+            select $fields from bill 
+              left join image on bill.logistics_image_id = image.id
+              left join user on bill.creator_open_id=user.open_id
+             where po_from_open_id ='".$openid."' 
+                $creator_status
                $filterString
-            group by goods.id
-            order by orderby desc 
             limit $offset, $pageSize
         ";
         $stmt = $this->fastQuery($sql2, $param);
@@ -255,6 +262,17 @@ class billController extends \core\myorm_core
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    //获取商品图片
+    public function getImageidByGoodsid($goods_id){
+        if (empty($goods_id)){
+            return false;
+        }
+        $sql = "select file_name,path from goods_image left join image on goods_image.image_id=image.id where goods_id=$goods_id";
+        $stmt = $this->fastQuery($sql);
+        $data = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $data;
+    }
+
 
     /*
      * 订单创建
@@ -265,7 +283,7 @@ class billController extends \core\myorm_core
         $Rdata = (array)($_REQUEST ?? []);
 
         //允许外面传入的字段
-        $allowFields = ['po_from_open_id','po_from_partner_id','sale_to_open_id','sale_to_partner_id','address_info_id','sender_info_id','first_bill_id',
+        $allowFields = ['po_from_partner_id','sale_to_open_id','sale_to_partner_id','address_info_id','sender_info_id','first_bill_id',
             'last_bill_id','goods_id','goods_desc','goods_title','number','purchas_price','description',
             'sale_price','creator_status','logistics_status','logistics_number','logistics_image_id','receiver_status','year',
             'send_time'
