@@ -35,7 +35,7 @@ class addressController extends \core\myorm_core{
      * http://118.126.112.43:8080/index.php/address/list
      * */
     public function list(){
-        [$offset, $pageSize, $page, $data] = $this->pagination('senderPagesize');
+        list($offset, $pageSize, $page, $data) = $this->pagination('senderPagesize');
         $partner_id = $_REQUEST['partner_id'];
         $fields = implode(', ', [
             'id',

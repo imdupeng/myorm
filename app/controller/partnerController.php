@@ -36,7 +36,7 @@ class partnerController extends \core\myorm_core{
      * http://myorm.com/index.php/partner/list/type/2/page/1/pagesize/5
      * */
     public function list(){
-        [$offset, $pageSize, $page, $data] = $this->pagination('partnerPagesize');
+        list($offset, $pageSize, $page, $data) = $this->pagination('partnerPagesize');
         $openid = $_SESSION['openid'];
         $type = $_REQUEST['type'];
         $status = $_REQUEST['status'];

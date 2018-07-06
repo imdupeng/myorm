@@ -37,7 +37,7 @@ class productController extends \core\myorm_core
      * */
     public function list()
     {
-        [$offset, $pageSize, $page, $data] = $this->pagination('productPagesize');
+        list($offset, $pageSize, $page, $data) = $this->pagination('productPagesize');
 
         $fields = implode(', ', [
             'goods.id',
@@ -95,7 +95,7 @@ class productController extends \core\myorm_core
      * */
     public function mylist()
     {
-        [$offset, $pageSize, $page, $data] = $this->pagination('productPagesize');
+        list($offset, $pageSize, $page, $data) = $this->pagination('productPagesize');
 
         $fields = implode(', ', [
             'goods.id',

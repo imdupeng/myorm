@@ -37,7 +37,7 @@ class logisticsController extends \core\myorm_core
      * */
     public function list()
     {
-        [$offset, $pageSize, $page, $data] = $this->pagination('productPagesize');
+        list($offset, $pageSize, $page, $data) = $this->pagination('productPagesize');
 
         $fields = implode(', ', [
             'id',

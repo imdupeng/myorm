@@ -37,7 +37,7 @@ class billController extends \core\myorm_core
      * */
     public function list()
     {
-        [$offset, $pageSize, $page, $data] = $this->pagination('billPagesize');
+        list($offset, $pageSize, $page, $data) = $this->pagination('billPagesize');
 
         $fields = implode(', ', [
             'bill.id',
@@ -113,7 +113,7 @@ class billController extends \core\myorm_core
      * */
     public function pobilllist()
     {
-        [$offset, $pageSize, $page, $data] = $this->pagination('billPagesize');
+        list($offset, $pageSize, $page, $data) = $this->pagination('billPagesize');
 
         $fields = implode(', ', [
             'bill.id',
