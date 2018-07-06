@@ -28,6 +28,17 @@ class billController extends \core\myorm_core
         }
     }
 
+    //通过openid获取用户姓名
+    public function getNameByOpenid($openid){
+        if (empty($openid)){
+            return false;
+        }
+        $sql = "select name from partner where openid='".$openid."'";
+        $stmt = $this->fastQuery($sql);
+        $name = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $name;
+    }
+
     /*
      * 获取订单列表,分页
      * @param int $page 第几页
@@ -73,6 +84,11 @@ class billController extends \core\myorm_core
         }else{
             $creator_status = '';
         }
+        if (!empty($_REQUEST['bill_type'])){
+            $bill_type = 'and bill_type = '.$_REQUEST['bill_type'];
+        }else{
+            $bill_type = '';
+        }
 
         $filters = [];
         $param  = [];
@@ -94,12 +110,20 @@ class billController extends \core\myorm_core
               left join image on bill.logistics_image_id = image.id
               left join user on bill.creator_open_id=user.open_id
              where creator_open_id ='".$openid."' 
-                $creator_status
+                $creator_status 
+                $bill_type
                $filterString
             limit $offset, $pageSize
         ";
         $stmt = $this->fastQuery($sql2, $param);
-        $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $list = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        //添加供货商和买家名字
+        foreach ($list as $kk=>$vv){
+            $list[$kk]['salername'] = $this->getNameByOpenid($vv['po_from_open_id']);
+            $list[$kk]['buyername'] = $this->getNameByOpenid($vv['sale_to_open_id']);
+        }
+
+        $data['list'] = $list;
         return Response::json(true, 350, '查询订单成功', $data);
     }
 
@@ -149,6 +173,11 @@ class billController extends \core\myorm_core
         }else{
             $creator_status = '';
         }
+        if (!empty($_REQUEST['bill_type'])){
+            $bill_type = 'and bill_type = '.$_REQUEST['bill_type'];
+        }else{
+            $bill_type = '';
+        }
 
         $filters = [];
         $param  = [];
@@ -170,12 +199,19 @@ class billController extends \core\myorm_core
               left join image on bill.logistics_image_id = image.id
               left join user on bill.creator_open_id=user.open_id
              where po_from_open_id ='".$openid."' 
-                $creator_status
+                $creator_status 
+                $bill_type
                $filterString
             limit $offset, $pageSize
         ";
         $stmt = $this->fastQuery($sql2, $param);
-        $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $list = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        foreach ($list as $kk=>$vv){
+            $list[$kk]['salername'] = $this->getNameByOpenid($vv['po_from_open_id']);
+            $list[$kk]['buyername'] = $this->getNameByOpenid($vv['sale_to_open_id']);
+        }
+        $data['list'] = $list;
+
         return Response::json(true, 350, '查询订单成功', $data);
     }
 
@@ -267,10 +303,10 @@ class billController extends \core\myorm_core
         if (empty($goods_id)){
             return false;
         }
-        $sql = "select file_name,path from goods_image left join image on goods_image.image_id=image.id where goods_id=$goods_id";
+        $sql = "select path from goods_image left join image on goods_image.image_id=image.id where goods_id=$goods_id";
         $stmt = $this->fastQuery($sql);
-        $data = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $data;
+        $data = $stmt->fetchALL(\PDO::FETCH_ASSOC);
+        return $data[0];
     }
 
 
@@ -281,12 +317,13 @@ class billController extends \core\myorm_core
     public function create()
     {
         $Rdata = (array)($_REQUEST ?? []);
+        $Rdata['goods_image'] = getImageidByGoodsid($Rdata['goods_id']);
 
         //允许外面传入的字段
         $allowFields = ['po_from_partner_id','sale_to_open_id','sale_to_partner_id','address_info_id','sender_info_id','first_bill_id',
             'last_bill_id','goods_id','goods_desc','goods_title','number','purchas_price','description',
             'sale_price','creator_status','logistics_status','logistics_number','logistics_image_id','receiver_status','year',
-            'send_time'
+            'send_time','goods_image'
             ];
         $thetime = time();
         $no1= date('ym',$thetime);
