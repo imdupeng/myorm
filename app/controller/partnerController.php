@@ -42,13 +42,16 @@ class partnerController extends \core\myorm_core{
         $status = $_REQUEST['status'];
 
         $fields = implode(', ', [
-            'id',
-            'type',
-            'wechat',
-            'name',
-            'phone',
-            'note',
-            'status',
+            'partner.id',
+            'partner.partner_openid',
+            'partner.type',
+            'partner.wechat',
+            'partner.name',
+            'partner.phone',
+            'partner.note',
+            'partner.status',
+            'address.address',
+            'address.id as addrid',
         ]);
         $filters = [];
         $param  = [];
@@ -60,8 +63,10 @@ class partnerController extends \core\myorm_core{
         }
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
 
-        $sql2 = "select $fields from partner where openid='".$openid."' 
-               and status='".$status."' and type='".$type."'
+        $sql2 = "select $fields from partner 
+               left join address on address.partner_id = partner.partner_openid
+               where partner.openid='".$openid."' 
+               and partner.status='".$status."' and type='".$type."'
                $filterString 
              limit $offset, $pageSize
         ";

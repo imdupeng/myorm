@@ -37,22 +37,15 @@ class productController extends \core\myorm_core
      * */
     public function list()
     {
+
+
         list($offset, $pageSize, $page, $data) = $this->pagination('productPagesize');
 
-        $fields = implode(', ', [
-            'goods.id',
-            'goods.name',
-            'goods.description',
-            'goods.vendor_id',
-            'goods.vendor_name',
-            'goods.purchase_price',
-            'goods.wholesale_price',
-            'goods.retail_price'
-        ]);
+
         $openid = $_SESSION['openid'];
 
         $filters = [];
-        $param  = [];
+        $param = [];
         $keywords = (string)($_REQUEST['keywords'] ?? '');
         if ($keywords) {
             list($filter1, $paramName, $search) = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
@@ -61,7 +54,7 @@ class productController extends \core\myorm_core
 
             //添加搜索记录
             $sql3 = "insert into search_history (openid,keywords,created_at) values (?,?,?)";
-            $param3= [
+            $param3 = [
                 1 => $openid,
                 2 => $keywords,
                 3 => time()
@@ -70,16 +63,76 @@ class productController extends \core\myorm_core
         }
 
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
-        $sql2 = "
+
+        if (!empty($_REQUEST['listtype']) && $_REQUEST['listtype'] == '2') {//最近订货
+            $fields = implode(', ', [
+                'goods.id',
+                'goods.name',
+                'goods.description',
+                'goods.vendor_id',
+                'goods.vendor_name',
+                'goods.purchase_price',
+                'goods.wholesale_price',
+                'goods.retail_price',
+                'bill.goods_id as billgoodsid',
+                'bill.created_at as billcreated'
+            ]);
+            $sql2 = "
+            select $fields, image.path as image from goods 
+              left join goods_image on goods_image.goods_id = goods.id
+              left join image on goods_image.image_id = image.id
+              left join bill on bill.goods_id = goods.id
+             where pstatus=2
+               $filterString
+            order by billcreated desc
+            limit $offset, $pageSize
+        ";
+        } elseif (!empty($_REQUEST['listtype']) && $_REQUEST['listtype'] == '3') {//30天畅销
+            $fields = implode(', ', [
+                'goods.id',
+                'goods.name',
+                'goods.description',
+                'goods.vendor_id',
+                'goods.vendor_name',
+                'goods.purchase_price',
+                'goods.wholesale_price',
+                'goods.retail_price',
+                'bill.goods_id as billgoodsid',
+                'count(bill.goods_id) as billgoodsidnum',
+            ]);
+            $sql2 = "
+            select $fields, image.path as image from goods 
+              left join goods_image on goods_image.goods_id = goods.id
+              left join image on goods_image.image_id = image.id
+              left join bill on bill.goods_id = goods.id
+             where pstatus=2
+               $filterString
+            group by billgoodsid
+            order by billgoodsidnum desc
+            limit $offset, $pageSize
+        ";
+        } else {
+            $fields = implode(', ', [
+                'goods.id',
+                'goods.name',
+                'goods.description',
+                'goods.vendor_id',
+                'goods.vendor_name',
+                'goods.purchase_price',
+                'goods.wholesale_price',
+                'goods.retail_price'
+            ]);
+            $sql2 = "
             select $fields, image.path as image from goods 
               left join goods_image on goods_image.goods_id = goods.id
               left join image on goods_image.image_id = image.id
              where pstatus=2
                $filterString
-            group by goods.id
             order by orderby desc
             limit $offset, $pageSize
         ";
+        }
+
         $stmt = $this->fastQuery($sql2, $param);
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return Response::json(true, 350, '查询商品成功', $data);
@@ -110,7 +163,7 @@ class productController extends \core\myorm_core
         $openid = $_SESSION['openid'];
 
         $filters = [];
-        $param  = [];
+        $param = [];
         $keywords = (string)($_REQUEST['keywords'] ?? '');
         if ($keywords) {
             list($filter1, $paramName, $search) = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
@@ -119,7 +172,7 @@ class productController extends \core\myorm_core
 
             //添加搜索记录
             $sql3 = "insert into search_history (openid,keywords,created_at) values (?,?,?)";
-            $param3= [
+            $param3 = [
                 1 => $openid,
                 2 => $keywords,
                 3 => time()
@@ -128,17 +181,77 @@ class productController extends \core\myorm_core
         }
 
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
-        $sql2 = "
+        if (!empty($_REQUEST['listtype']) && $_REQUEST['listtype'] == '2') {//最近订货
+            $fields = implode(', ', [
+                'goods.id',
+                'goods.name',
+                'goods.description',
+                'goods.vendor_id',
+                'goods.vendor_name',
+                'goods.purchase_price',
+                'goods.wholesale_price',
+                'goods.retail_price',
+                'bill.goods_id as billgoodsid',
+                'bill.created_at as billcreated'
+            ]);
+            $sql2 = "
             select $fields, image.path as image from goods 
               left join goods_image on goods_image.goods_id = goods.id
               left join image on goods_image.image_id = image.id
-             where openid='".$openid."' 
-               and pstatus=2
+              left join bill on bill.goods_id = goods.id
+             where openid='".$openid."'  
+             and pstatus=2
                $filterString
-            group by goods.id
+            order by billcreated desc
+            limit $offset, $pageSize
+        ";
+        } elseif (!empty($_REQUEST['listtype']) && $_REQUEST['listtype'] == '3') {//30天畅销
+            $fields = implode(', ', [
+                'goods.id',
+                'goods.name',
+                'goods.description',
+                'goods.vendor_id',
+                'goods.vendor_name',
+                'goods.purchase_price',
+                'goods.wholesale_price',
+                'goods.retail_price',
+                'bill.goods_id as billgoodsid',
+                'count(bill.goods_id) as billgoodsidnum',
+            ]);
+            $sql2 = "
+            select $fields, image.path as image from goods 
+              left join goods_image on goods_image.goods_id = goods.id
+              left join image on goods_image.image_id = image.id
+              left join bill on bill.goods_id = goods.id
+             where openid='".$openid."'  
+             and pstatus=2
+               $filterString
+            group by billgoodsid
+            order by billgoodsidnum desc
+            limit $offset, $pageSize
+        ";
+        } else {
+            $fields = implode(', ', [
+                'goods.id',
+                'goods.name',
+                'goods.description',
+                'goods.vendor_id',
+                'goods.vendor_name',
+                'goods.purchase_price',
+                'goods.wholesale_price',
+                'goods.retail_price'
+            ]);
+            $sql2 = "
+            select $fields, image.path as image from goods 
+              left join goods_image on goods_image.goods_id = goods.id
+              left join image on goods_image.image_id = image.id 
+             where openid='".$openid."'  
+             and pstatus=2
+               $filterString
             order by orderby desc
             limit $offset, $pageSize
         ";
+        }
         $stmt = $this->fastQuery($sql2, $param);
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return Response::json(true, 350, '查询商品成功', $data);
@@ -162,15 +275,15 @@ class productController extends \core\myorm_core
             'goods.retail_price'
         ]);
 
-        $param  = [];
+        $param = [];
         $pk = (string)($_REQUEST['id'] ?? '');
         $openid = $_SESSION['openid'];
         $sql2 = "
             select $fields from goods
-             where openid='".$openid."' 
+             where openid='" . $openid . "' 
                and pstatus=2
         ";
-        
+
         $stmt = $this->fastQuery($sql2, $param);
 
         $data = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -205,7 +318,7 @@ class productController extends \core\myorm_core
         where goods_image.goods_id = :goods_id
         ";
         $param = ['goods_id' => $goodsId];
-        
+
         $stmt = $this->fastQuery($sql2, $param);
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -220,8 +333,8 @@ class productController extends \core\myorm_core
         $Rdata = (array)($_REQUEST ?? []);
 
         //允许外面传入的字段
-        $allowFields = ['name','description','vendor_id','purchase_price','wholesale_price','retail_price','orderby'];
-        
+        $allowFields = ['name', 'description', 'vendor_id', 'purchase_price', 'wholesale_price', 'retail_price', 'orderby'];
+
         // 固定值, 补充或覆盖到 $data 中
         $openid = $_SESSION['openid'];
         $fixed = [
@@ -293,7 +406,7 @@ class productController extends \core\myorm_core
             $pdata['orderby'] = $data['orderby'];
         }
 
-        $allowFields = ['category_id','name','description','vendor_id','vendor_name','purchase_price','wholesale_price','retail_price','pstatus','orderby']; //允许外面传入的字段
+        $allowFields = ['category_id', 'name', 'description', 'vendor_id', 'vendor_name', 'purchase_price', 'wholesale_price', 'retail_price', 'pstatus', 'orderby']; //允许外面传入的字段
         list($fields, $data) = $this->dataForUpdate($pdata, $allowFields);
         $openid = $_SESSION['openid'];
 
@@ -328,7 +441,7 @@ class productController extends \core\myorm_core
     {
         // 处理图片
         if ($pk && !empty($images)) {
-            $rows= [];
+            $rows = [];
             foreach ($images as $image) {
                 $rows[] = [
                     'goods_id' => $pk,
@@ -355,7 +468,7 @@ class productController extends \core\myorm_core
         $newImages = array_diff($images, $existsImages);
 
         if ($newImages) {
-            $rows= [];
+            $rows = [];
             foreach ($newImages as $image) {
                 $rows[] = [
                     'goods_id' => (int)$lastId,
@@ -427,8 +540,8 @@ class productController extends \core\myorm_core
     public function search_history()
     {
         $openid = $_SESSION['openid'];
-        $sql2 = "select keywords from search_history where openid='".$openid."' order by created_at desc";
-        $param= [];
+        $sql2 = "select keywords from search_history where openid='" . $openid . "' order by created_at desc";
+        $param = [];
         $stmt = $this->fastQuery($sql2, $param);
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return Response::json(true, 350, '查询商品成功', $data);
