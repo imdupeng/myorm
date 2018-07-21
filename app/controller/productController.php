@@ -278,10 +278,12 @@ class productController extends \core\myorm_core
         $openid = $_SESSION['openid'];
         $sql2 = "
             select $fields from goods
-             where openid=:_openid
-               and pstatus=2
+             where id=:_pk
+             and openid=:_openid
+             and pstatus=2
         ";
         $param['_openid'] = $openid;
+        $param['_pk'] = $pk;
         $stmt = $this->fastQuery($sql2, $param);
 
         $data = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -336,7 +338,7 @@ class productController extends \core\myorm_core
         // 固定值, 补充或覆盖到 $data 中
         $openid = $_SESSION['openid'];
         $fixed = [
-            '_openid' => $openid,
+            'openid' => $openid,
             'pstatus' => 2,
             'last_bill_at' => null,
             'deleted_at' => null,

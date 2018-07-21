@@ -88,7 +88,7 @@ class partnerController extends \core\myorm_core{
         // 固定值, 补充或覆盖到 $data 中
         $openid = $_SESSION['openid'];
         $fixed = [
-            '_openid' => $openid,
+            'openid' => $openid,
             'status' => 2,
         ];
 
