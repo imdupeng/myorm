@@ -13,11 +13,7 @@ class addressController extends \core\myorm_core{
 
     public function __construct()
     {
-        //检测是否登录
-        if(!empty($_POST['PHPSESSID'])){
-            session_id($_POST['PHPSESSID']);
-            session_start();
-        }
+        parent::startSession();
         if (empty($_SESSION['openid'])) {
             $status = false;
             $code = 257;
@@ -165,7 +161,7 @@ class addressController extends \core\myorm_core{
      * 删除伙伴地址
      * deleted_at记录值存在，则为已删除数据
      * */
-    public function delete(){
+    public function del(){
         $pk = $_REQUEST['id'] ?? 0;
         $partnerid = $_REQUEST['partner_id'] ?? 0;
 

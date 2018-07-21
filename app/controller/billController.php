@@ -14,11 +14,7 @@ class billController extends \core\myorm_core
 {
     public function __construct()
     {
-        //检测是否登录
-        if(!empty($_POST['PHPSESSID'])){
-            session_id($_POST['PHPSESSID']);
-            session_start();
-        }
+        parent::startSession();
         if (empty($_SESSION['openid'])) {
             $status = false;
             $code = 257;
@@ -546,7 +542,7 @@ class billController extends \core\myorm_core
      * 删除订单,修改订单状态为4
      * http://118.126.112.43:8080/index.php/bill/delete
      * */
-    public function delete()
+    public function del()
     {
         $pk = (int)($_REQUEST['id'] ?? 0);
 

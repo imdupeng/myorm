@@ -12,6 +12,21 @@ class myorm_core{
     public static $classMap = array();//防止重复引入类
     public $assign;
 
+    public function startSession() {
+        if(session_status() == PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        if(!empty($_POST['PHPSESSID'])){
+            session_id($_POST['PHPSESSID']);
+            session_start();
+        } else {
+            session_start();
+        }
+
+        return session_id();
+    }
+
     /*
      * 启动框架索要调用的方法
      * */
@@ -74,11 +89,9 @@ class myorm_core{
         }
     }
 
-
-
     protected function init()
     {
-        $this->userId = 1;
+        $this->startSession();
     }
     
     protected function pagination($what='productPagesize')

@@ -23,7 +23,9 @@ class userController extends \core\myorm_core
      * */
     public function get_openid($code = '')
     {
-//        $code = $_GET['code'];//wx.login得到的code
+        if ($code== '') {
+            $code = $_REQUEST['code'];//wx.login得到的code
+        }
         $appConfig = config::allconfig('weixin');//读取微信配置文件
         $appid = $appConfig['appid'];
         $appsecret = $appConfig['appsecret'];
@@ -31,12 +33,17 @@ class userController extends \core\myorm_core
         header("Content-Type: application/json");
         $data = file_get_contents($json);
         //$data = '{"session_key":"ZZK4m9oqtVlKtEz87SVURQ==","openid":"o5N5M5fJua3IkxE5V82kVZ1Tcs3I"}';
+        
+        header("code:$code");
+        header("openid:{$data}");
+
         $data = json_decode($data, true);
-		if(empty($data['openid'])){
+        // file_put_contents('temp/open_id.log', $data, FILE_APPEND);
+		
+        if(empty($data['openid'])){
 			return null;
-		}
-        $openid = $data['openid'];
-		return $data['openid'];
+        }
+        return array($data['openid'], $data);
     }
 
 
@@ -45,10 +52,7 @@ class userController extends \core\myorm_core
      * */
     public function uploadimage()
     {
-        if(!empty($_POST['PHPSESSID'])){
-            session_id($_POST['PHPSESSID']);
-            session_start();
-        }
+        parent::startSession();
         if (empty($_SESSION['openid'])) {
             $status = false;
             $code = 257;
@@ -101,10 +105,7 @@ class userController extends \core\myorm_core
      * */
     public function update_user()
     {
-        if(!empty($_POST['PHPSESSID'])){
-            session_id($_POST['PHPSESSID']);
-            session_start();
-        }
+        parent::startSession();
         if (empty($_SESSION['openid'])) {
             $status = false;
             $code = 257;
@@ -174,15 +175,16 @@ class userController extends \core\myorm_core
         } else {
             $data = $_POST;
 			if(!is_array($data)){
-				$pdata = json_decode($data);
+				$data = json_decode($data);
 			}
             if (!empty($data['code'])) {
                 $code = $data['code'];//wx.login得到的code
-                $openid = $this->get_openid($code);
+                list($openid, $wxMsg) = $this->get_openid($code);
                 if ($openid) {
                     $is_user_exist = $this->is_user_exist($openid);
                     if ($is_user_exist) {//用户存在，返回用户openid
-                        session_start();
+                        
+                        parent::startSession();
                         $_SESSION["openid"] = $openid;
                         $status = true;
                         $code = '200';
@@ -195,7 +197,8 @@ class userController extends \core\myorm_core
                         $stmt->execute(array('open_id'=>$openid));
                         $row_count = $stmt->rowCount();
                         if ($row_count) {
-                            session_start();
+
+                            parent::startSession();
                             $_SESSION['openid'] = $openid;
                             $status = true;
                             $code = '251';

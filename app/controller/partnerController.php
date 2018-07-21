@@ -13,11 +13,7 @@ class partnerController extends \core\myorm_core{
 
     public function __construct()
     {
-        //检测是否登录
-        if(!empty($_POST['PHPSESSID'])){
-            session_id($_POST['PHPSESSID']);
-            session_start();
-        }
+        parent::startSession();
         if (empty($_SESSION['openid'])) {
             $status = false;
             $code = 257;
@@ -174,7 +170,7 @@ class partnerController extends \core\myorm_core{
      * 删除伙伴
      * http://118.126.112.43:8080/index.php/partner/delete
      * */
-    public function delete(){
+    public function del(){
         $pk = $_REQUEST['id'] ?? 0;
 
         $data = [

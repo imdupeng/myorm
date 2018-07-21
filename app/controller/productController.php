@@ -14,11 +14,7 @@ class productController extends \core\myorm_core
 {
     public function __construct()
     {
-        //检测是否登录
-        if (!empty($_POST['PHPSESSID'])) {
-            session_id($_POST['PHPSESSID']);
-            session_start();
-        }
+        parent::startSession();
         if (empty($_SESSION['openid'])) {
             $status = false;
             $code = 257;
@@ -494,7 +490,7 @@ class productController extends \core\myorm_core
      * 删除商品,修改商品状态为4
      * http://118.126.112.43:8080/index.php/product/delete
      * */
-    public function delete()
+    public function del()
     {
         $pk = (int)($_REQUEST['id'] ?? 0);
 
