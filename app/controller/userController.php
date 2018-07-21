@@ -74,7 +74,7 @@ class userController extends \core\myorm_core
             if (($_FILES["file"]["type"] == "image/png" || $_FILES["file"]["type"] == "image/jpeg") && $_FILES["file"]["size"] < 10240000) {
                 //防止文件名重复
                 $name = $_FILES["file"]["name"];
-                $filename = "./static/images/" . $_FILES["file"]["name"];
+                $filename = "./images/" . $_FILES["file"]["name"];
                 //转码，把utf-8转成gb2312,返回转换后的字符串， 或者在失败时返回 FALSE。
 //                $filename = iconv("UTF-8", "gb2312", $filename);
                 //检查文件或目录是否存在

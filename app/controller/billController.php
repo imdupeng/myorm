@@ -76,12 +76,12 @@ class billController extends \core\myorm_core
         ]);
         $openid = $_SESSION['openid'];
         if (!empty($_REQUEST['creator_status'])){
-            $creator_status = 'and creator_status = '.$_REQUEST['creator_status'];
+            $creator_status = 'and creator_status = '.(int)$_REQUEST['creator_status'];
         }else{
             $creator_status = '';
         }
         if (!empty($_REQUEST['bill_type'])){
-            $bill_type = 'and bill_type = '.$_REQUEST['bill_type'];
+            $bill_type = 'and bill_type = '.(int)$_REQUEST['bill_type'];
         }else{
             $bill_type = '';
         }
@@ -166,12 +166,12 @@ class billController extends \core\myorm_core
         ]);
         $openid = $_SESSION['openid'];
         if (!empty($_REQUEST['creator_status'])){
-            $creator_status = 'and creator_status = '.$_REQUEST['creator_status'];
+            $creator_status = 'and creator_status = '.(int)$_REQUEST['creator_status'];
         }else{
             $creator_status = '';
         }
         if (!empty($_REQUEST['bill_type'])){
-            $bill_type = 'and bill_type = '.$_REQUEST['bill_type'];
+            $bill_type = 'and bill_type = '.(int)$_REQUEST['bill_type'];
         }else{
             $bill_type = '';
         }
@@ -223,7 +223,7 @@ class billController extends \core\myorm_core
         if (empty($_REQUEST['order_no'])){
             return Response::json(false, 359, '缺少订单id！', []);
         }else{
-            $order_no = $_REQUEST['order_no'];
+            $order_no = (int)$_REQUEST['order_no'];
         }
         $fields = implode(', ', [
             'bill.id',
@@ -260,11 +260,17 @@ class billController extends \core\myorm_core
             select $fields from bill 
               left join image on bill.logistics_image_id = image.id
               left join user on bill.creator_open_id=user.open_id
-             where creator_open_id=:_openid
-               and order_no=".$order_no;
+             where (creator_open_id=:_openid OR po_from_open_id=:_openid)
+               and order_no=:_order_no";
         $param['_openid'] = $openid;
+        $param['_order_no'] = $order_no;
         $stmt = $this->fastQuery($sql2, $param);
         $data = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if($data['po_from_open_id'] == $openid) {
+            // 查看代理商发来的订单时候, 不显示其销售价
+            unset($data['sale_price']);
+        }
         return Response::json(true, 350, '查询订单成功', $data);
     }
 
@@ -322,29 +328,37 @@ class billController extends \core\myorm_core
 //        $Rdata['goods_image'] = $this->getImageidByGoodsid($Rdata['goods_id']);
 
         $Rdata['isSave'];//是否勾选保存地址
-        if ($Rdata['isSave'] && $Rdata['sale_to_open_id']){//保存地址
-            $custormID = $Rdata['sale_to_open_id'];
-            $sql23 = "select * from address where partner_id='".$custormID."'";
-            $stmt23 = $this->fastQuery($sql23);
-            $Cdata = $stmt23->fetchALL(\PDO::FETCH_ASSOC);
-            if ($Cdata != null && $Cdata != ''){//客户地址存在，update更新地址
-                $sql1 = "update address set name='".$Rdata['save_name']."',phone='".$Rdata['save_phone']."',address='".$Rdata['save_address']."' where partner_id='".$custormID."'";
-                $stmt1 = $this->fastQuery($sql1);
-//                $Cdata = $stmt1->fetchALL(\PDO::FETCH_ASSOC);
-                $address_info_id = $Cdata[0]['id'];
-            }else{//客户地址不存在，insert
-                $pdo = new \core\lib\model;
-                $stmt2 = $pdo->prepare("insert into address (name,phone,address,partner_id,status) values(:name,:phone,:address,:partner_id,:status)");
-                $stmt2->bindValue(':name', $Rdata['save_name']);
-                $stmt2->bindValue(':phone', $Rdata['save_phone']);
-                $stmt2->bindValue(':address', $Rdata['save_address']);
-                $stmt2->bindValue(':partner_id', $custormID);
-                $stmt2->bindValue(':status', 2);
-                $effected = $stmt2->execute();
-                $address_info_id   = $effected ? $pdo->lastInsertId() : null;
+        $address_info_id = (int)$Rdata['address_info_id'];
+        $custormID = (int)$Rdata['sale_to_partner_id'];
+
+        $pdo = new \core\lib\model;
+        
+        if ($address_info_id > 0) {
+            // 判断地址是否变化;
+            $addressInfo = $pdo->query("select name,phone,address from address where id = $address_info_id")->fetch(\PDO::FETCH_ASSOC);
+            $address = [
+                'name'=> $Rdata['save_name'],
+                'phone'=> $Rdata['save_phone'],
+                'address'=> $Rdata['save_address']
+            ];
+            if($addressInfo != $address) {
+                $address_info_id = 0;
             }
         }
 
+        //保存地址
+        if($address_info_id == 0) {
+
+            $pdo = new \core\lib\model;
+            $stmt2 = $pdo->prepare("insert into address (name,phone,address,partner_id,status) values(:name,:phone,:address,:partner_id,:status)");
+            $stmt2->bindValue(':name', $Rdata['save_name']);
+            $stmt2->bindValue(':phone', $Rdata['save_phone']);
+            $stmt2->bindValue(':address', $Rdata['save_address']);
+            $stmt2->bindValue(':partner_id', $custormID);
+            $stmt2->bindValue(':status',  $Rdata['isSave'] == '1' ? 2 : 3); // 2默认地址 3备选地址
+            $effected = $stmt2->execute();
+            $address_info_id   = $effected ? $pdo->lastInsertId() : null;
+        }
 
         //允许外面传入的字段
         $allowFields = ['po_from_partner_id','po_from_open_id','sale_to_open_id','sale_to_partner_id','address_info_id','sender_info_id','first_bill_id',
