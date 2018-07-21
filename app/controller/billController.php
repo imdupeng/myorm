@@ -29,8 +29,8 @@ class billController extends \core\myorm_core
         if (empty($openid)){
             return false;
         }
-        $sql = "select name from partner where openid='".$openid."'";
-        $stmt = $this->fastQuery($sql);
+        $sql = "select name from partner where openid=:_openid";
+        $stmt = $this->fastQuery($sql, ['_openid' => $openid]);
         $name = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $name;
     }
@@ -105,12 +105,13 @@ class billController extends \core\myorm_core
             select $fields from bill 
               left join image on bill.logistics_image_id = image.id
               left join user on bill.creator_open_id=user.open_id
-             where creator_open_id ='".$openid."' 
+             where creator_open_id =:_openid
                 $creator_status 
                 $bill_type
                $filterString
             limit $offset, $pageSize
         ";
+        $param['_openid'] = $openid;
         $stmt = $this->fastQuery($sql2, $param);
         $list = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         //添加供货商和买家名字
@@ -194,12 +195,13 @@ class billController extends \core\myorm_core
             select $fields from bill 
               left join image on bill.logistics_image_id = image.id
               left join user on bill.creator_open_id=user.open_id
-             where po_from_open_id ='".$openid."' 
+             where po_from_open_id =:_openid
                 $creator_status 
                 $bill_type
                $filterString
             limit $offset, $pageSize
         ";
+        $param['_openid'] = $openid;
         $stmt = $this->fastQuery($sql2, $param);
         $list = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         foreach ($list as $kk=>$vv){
@@ -258,9 +260,9 @@ class billController extends \core\myorm_core
             select $fields from bill 
               left join image on bill.logistics_image_id = image.id
               left join user on bill.creator_open_id=user.open_id
-             where creator_open_id='".$openid."' 
+             where creator_open_id=:_openid
                and order_no=".$order_no;
-        
+        $param['_openid'] = $openid;
         $stmt = $this->fastQuery($sql2, $param);
         $data = $stmt->fetch(\PDO::FETCH_ASSOC);
         return Response::json(true, 350, '查询订单成功', $data);
@@ -411,7 +413,7 @@ class billController extends \core\myorm_core
             return Response::json(false, 359, '订单编号不正确', []);
         }
         $data = (array)($_REQUEST ?? []);
-        $Order_no = $_REQUEST['order_no'];
+        $order_no = $_REQUEST['order_no'];
 
         $pdata = [];
         if (!empty($data['po_from_open_id'])){
@@ -458,18 +460,20 @@ class billController extends \core\myorm_core
             'last_bill_id','description',
             'creator_status','logistics_status','logistics_number','logistics_image_id','receiver_status','send_time']; //允许外面传入的字段
         list($fields, $data) = $this->dataForUpdate($pdata, $allowFields);
-        $Openid = $_SESSION['openid'];
+        $openid = $_SESSION['openid'];
 
         try {
             $sql = "
             update bill
                set $fields
-             where order_no = '".$Order_no."'
-               and creator_open_id = '".$Openid."' 
+             where order_no = :_order_no
+               and creator_open_id = :_openid
             ";
 
             // 条件上的参数,注意不要与字段名重复
             $params1 = [
+                '_openid' => $openid,
+                '_order_no' => $order_no
             ];
             $params = array_merge($params1,$pdata);
             $effected = $this->fastUpdate($sql, $data, $params);
@@ -479,7 +483,7 @@ class billController extends \core\myorm_core
 ////                $this->upgradeImageList($pk, $data['images']);
 ////            }
 
-            return Response::json(true, 350, '订单更新成功', $Order_no);
+            return Response::json(true, 350, '订单更新成功', $order_no);
         } catch (Exception $e) {
             return Response::exception(351, $e);
         }
@@ -559,13 +563,13 @@ class billController extends \core\myorm_core
             update goods
                set $fields
              where id = :id 
-               and openid = :openid;
+               and openid = :_openid;
             ";
 
             // 条件上的参数,注意不要与字段名重复
             $params = [
                 'id' => $pk,
-                'openid' => $openid,
+                '_openid' => $openid,
             ];
 
             $effected = $this->fastUpdate($sql, $data, $params);

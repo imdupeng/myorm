@@ -195,7 +195,7 @@ class productController extends \core\myorm_core
               left join goods_image on goods_image.goods_id = goods.id
               left join image on goods_image.image_id = image.id
               left join bill on bill.goods_id = goods.id
-             where openid='".$openid."'  
+             where openid=:_openid
              and pstatus=2
                $filterString
             order by billcreated desc
@@ -219,7 +219,7 @@ class productController extends \core\myorm_core
               left join goods_image on goods_image.goods_id = goods.id
               left join image on goods_image.image_id = image.id
               left join bill on bill.goods_id = goods.id
-             where openid='".$openid."'  
+             where openid=:_openid
              and pstatus=2
                $filterString
             group by billgoodsid
@@ -241,13 +241,15 @@ class productController extends \core\myorm_core
             select $fields, image.path as image from goods 
               left join goods_image on goods_image.goods_id = goods.id
               left join image on goods_image.image_id = image.id 
-             where openid='".$openid."'  
+             where openid=:_openid
              and pstatus=2
                $filterString
             order by orderby desc
             limit $offset, $pageSize
         ";
         }
+
+        $param['_openid'] = $openid;
         $stmt = $this->fastQuery($sql2, $param);
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return Response::json(true, 350, '查询商品成功', $data);
@@ -276,10 +278,10 @@ class productController extends \core\myorm_core
         $openid = $_SESSION['openid'];
         $sql2 = "
             select $fields from goods
-             where openid='" . $openid . "' 
+             where openid=:_openid
                and pstatus=2
         ";
-
+        $param['_openid'] = $openid;
         $stmt = $this->fastQuery($sql2, $param);
 
         $data = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -334,7 +336,7 @@ class productController extends \core\myorm_core
         // 固定值, 补充或覆盖到 $data 中
         $openid = $_SESSION['openid'];
         $fixed = [
-            'openid' => $openid,
+            '_openid' => $openid,
             'pstatus' => 2,
             'last_bill_at' => null,
             'deleted_at' => null,
@@ -411,13 +413,13 @@ class productController extends \core\myorm_core
             update goods
                set $fields
              where id = :id 
-               and openid = :openid;
+               and openid = :_openid;
             ";
 
             // 条件上的参数,注意不要与字段名重复
             $params1 = [
                 'id' => $pk,
-                'openid' => $openid,
+                '_openid' => $openid,
             ];
             $params = array_merge($params1, $pdata);
             $effected = $this->fastUpdate($sql, $data, $params);
@@ -507,13 +509,13 @@ class productController extends \core\myorm_core
             update goods
                set $fields
              where id = :id 
-               and openid = :openid;
+               and openid = :_openid;
             ";
 
             // 条件上的参数,注意不要与字段名重复
             $params = [
                 'id' => $pk,
-                'openid' => $openid,
+                '_openid' => $openid,
             ];
 
             $effected = $this->fastUpdate($sql, $data, $params);
@@ -536,8 +538,10 @@ class productController extends \core\myorm_core
     public function search_history()
     {
         $openid = $_SESSION['openid'];
-        $sql2 = "select keywords from search_history where openid='" . $openid . "' order by created_at desc";
-        $param = [];
+        $sql2 = "select keywords from search_history where openid=:_openid order by created_at desc";
+        $param = [
+            '_openid' => $openid
+        ];
         $stmt = $this->fastQuery($sql2, $param);
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return Response::json(true, 350, '查询商品成功', $data);

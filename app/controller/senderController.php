@@ -52,7 +52,10 @@ class senderController extends \core\myorm_core{
         }
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
 
-        $sql2 = "select $fields from sender where openid='".$openid."' and status=2 $filterString limit $offset,$pageSize";
+        $sql2 = "select $fields from sender where openid=:_openid and status=2 $filterString limit $offset,$pageSize";
+        $param  = [
+            '_openid' => $openid
+        ];
         $stmt = $this->fastQuery($sql2,$param);
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return Response::json(true,350,'查询伙伴成功',$data);
@@ -73,10 +76,14 @@ class senderController extends \core\myorm_core{
         $param  = [];
         $pk = (string)($_REQUEST['id'] ?? '');
         $openid = $_SESSION['openid'];
+        $param = [
+            '_openid' => $openid,
+            '_pk' => $pk,
+        ];
         $sql2 = "
             select $fields from sender
-             where openid='".$openid."' 
-               and id=$pk
+             where openid=:_openid
+               and id=:_pk
         ";
 
         $stmt = $this->fastQuery($sql2, $param);
@@ -100,7 +107,7 @@ class senderController extends \core\myorm_core{
         // 固定值, 补充或覆盖到 $data 中
         $openid = $_SESSION['openid'];
         $fixed = [
-            'openid' => $openid,
+            '_openid' => $openid,
             'status' => 2,
         ];
 
@@ -145,18 +152,19 @@ class senderController extends \core\myorm_core{
 
         $allowFields = ['name','phone','status']; //允许外面传入的字段
         list($fields, $data) = $this->dataForUpdate($data, $allowFields);
-        $Openid = $_SESSION['openid'];
+        $openid = $_SESSION['openid'];
         try {
             $sql = "
             update sender
                set $fields
              where id = :id 
-               and openid = '".$Openid."'
+               and openid = :_openid
             ";
 
             // 条件上的参数,注意不要与字段名重复
             $params1 = [
                 'id' => $pk,
+                '_openid' => $openid,
             ];
             $params = array_merge($params1,$pdata);
 
@@ -184,17 +192,18 @@ class senderController extends \core\myorm_core{
 
         $allowFields = []; //允许外面传入的字段
         list($fields, $data) = $this->dataForUpdate($data, $allowFields);
-        $Openid = $_SESSION['openid'];
+        $openid = $_SESSION['openid'];
         try {
             $sql = "
             update sender
                set $fields
              where id = :id 
-               and openid = '".$Openid."'
+               and openid = :_openid
             ";
             // 条件上的参数,注意不要与字段名重复
             $params = [
                 'id' => $pk,
+                '_openid' => $openid,
             ];
 
             $effected = $this->fastUpdate($sql, $data, $params);

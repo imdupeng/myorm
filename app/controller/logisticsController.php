@@ -60,10 +60,11 @@ class logisticsController extends \core\myorm_core
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
         $sql2 = "
             select $fields from logistics_bill 
-             where user_id='".$openid."' 
+             where user_id=:_openid
                $filterString
             limit $offset, $pageSize
         ";
+        $param['_openid'] = $openid;
         $stmt = $this->fastQuery($sql2, $param);
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return Response::json(true, 350, '查询物流运单成功', $data);
@@ -94,10 +95,12 @@ class logisticsController extends \core\myorm_core
         $openid = $_SESSION['openid'];
         $sql2 = "
             select * from logistics_bill
-             where user_id='".$openid."' 
-               and number='".$number."' 
+             where user_id=:_openid
+               and number=:_number
         ";
         
+        $param['_openid'] = $openid;
+        $param['_number'] = $number;
         $stmt = $this->fastQuery($sql2, $param);
 
         $data = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -196,13 +199,13 @@ class logisticsController extends \core\myorm_core
             update goods
                set $fields
              where id = :id 
-               and user_id = :openid;
+               and user_id = :_openid;
             ";
 
             // 条件上的参数,注意不要与字段名重复
             $params1 = [
                 'id' => $pk,
-                'openid' => $openid,
+                '_openid' => $openid,
             ];
             $params = array_merge($params1, $pdata);
             $effected = $this->fastUpdate($sql, $data, $params);
@@ -292,13 +295,13 @@ class logisticsController extends \core\myorm_core
             update goods
                set $fields
              where id = :id 
-               and openid = :openid;
+               and openid = :_openid;
             ";
 
             // 条件上的参数,注意不要与字段名重复
             $params = [
                 'id' => $pk,
-                'openid' => $openid,
+                '_openid' => $openid,
             ];
 
             $effected = $this->fastUpdate($sql, $data, $params);
@@ -321,8 +324,10 @@ class logisticsController extends \core\myorm_core
     public function search_history()
     {
         $openid = $_SESSION['openid'];
-        $sql2 = "select keywords from search_history where openid='".$openid."' order by created_at desc";
-        $param= [];
+        $sql2 = "select keywords from search_history where openid=:_openid order by created_at desc";
+        $param= [
+            '_openid' => $openid
+        ];
         $stmt = $this->fastQuery($sql2, $param);
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return Response::json(true, 350, '查询商品成功', $data);
