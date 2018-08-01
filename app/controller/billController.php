@@ -251,7 +251,12 @@ class billController extends \core\myorm_core
             'bill.receiver_status',
             'bill.year',
             'bill.created_at',
-            'bill.send_time'
+            'bill.send_time',
+            'sender.name as sender_name',
+            'sender.phone as sender_phone',
+            'address.name as buyer_name',
+            'address.phone as buyer_phone',
+            'address.address as buyer_address',
         ]);
 
         $param  = [];
@@ -260,6 +265,8 @@ class billController extends \core\myorm_core
             select $fields from bill 
               left join image on bill.logistics_image_id = image.id
               left join user on bill.creator_open_id=user.open_id
+              left join sender on sender.id=bill.sender_info_id
+              left join address on address.partner_id=bill.sale_to_open_id
              where (creator_open_id=:_openid OR po_from_open_id=:_openid)
                and order_no=:_order_no";
         $param['_openid'] = $openid;
