@@ -9,16 +9,11 @@ namespace app\controller;
 use app\Myclass\Response;
 use core\lib\config;
 
-class imageController extends \core\myorm_core{
+class productController extends \core\myorm_core{
 
     public function __construct()
     {
         parent::startSession();
-        //检测是否登录
-//        if(!empty($_POST['PHPSESSID'])){
-//            session_id($_POST['PHPSESSID']);
-//            session_start();
-//        }
         if (empty($_SESSION['openid'])) {
             $status = false;
             $code = 257;

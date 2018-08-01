@@ -13,11 +13,7 @@ class addressController extends \core\myorm_core{
 
     public function __construct()
     {
-        //检测是否登录
-        if(!empty($_POST['PHPSESSID'])){
-            session_id($_POST['PHPSESSID']);
-            session_start();
-        }
+        parent::startSession();
         if (empty($_SESSION['openid'])) {
             $status = false;
             $code = 257;
@@ -57,7 +53,8 @@ class addressController extends \core\myorm_core{
         }
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
 
-        $sql2 = "select $fields from address where partner_id='".$partner_id."' $filterString limit $offset,$pageSize";
+        $sql2 = "select $fields from address where partner_id=:partner_id $filterString limit $offset,$pageSize";
+        $param['partner_id'] = $partner_id;
         $stmt = $this->fastQuery($sql2,$param);
         $data['list'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return Response::json(true,350,'查询伙伴成功',$data);
@@ -77,7 +74,7 @@ class addressController extends \core\myorm_core{
         // 固定值, 补充或覆盖到 $data 中
         $openid = $_SESSION['openid'];
         $fixed = [
-            'openid' => $openid,
+            '_openid' => $openid,
             'status' => 2,
         ];
 
@@ -135,20 +132,20 @@ class addressController extends \core\myorm_core{
         $allowFields = ['name','phone','status','address','sheng','shi','xian']; //允许外面传入的字段
         list($fields, $data) = $this->dataForUpdate($data, $allowFields);
 
-        $Openod = $_SESSION['openid'];
+        $openid = $_SESSION['openid'];
 
         try {
             $sql = "
             update address
                set $fields
              where id = :id 
-               and openid = :openid;
+               and openid = :_openid;
             ";
 
             // 条件上的参数,注意不要与字段名重复
             $params = [
                 'id' => $pk,
-                'openid' => $Openod,
+                '_openid' => $openid,
             ];
             
             $effected = $this->fastUpdate($sql, $data, $params);
@@ -165,7 +162,7 @@ class addressController extends \core\myorm_core{
      * 删除伙伴地址
      * deleted_at记录值存在，则为已删除数据
      * */
-    public function delete(){
+    public function del(){
         $pk = $_REQUEST['id'] ?? 0;
         $partnerid = $_REQUEST['partner_id'] ?? 0;
 
@@ -224,10 +221,12 @@ class addressController extends \core\myorm_core{
         $openid = $_SESSION['openid'];
         $sql2 = "
             select $fields from address
-             where openid='".$openid."' 
-               and id=$pk
+             where openid=:_openid
+               and id=:_pk
         ";
 
+        $param['_openid'] = $openid;
+        $param['_pk'] = $pk;
         $stmt = $this->fastQuery($sql2, $param);
 
         $data = $stmt->fetch(\PDO::FETCH_ASSOC);

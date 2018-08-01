@@ -360,33 +360,120 @@ class billController extends \core\myorm_core
             $address_info_id   = $effected ? $pdo->lastInsertId() : null;
         }
 
-        //允许外面传入的字段
-        $allowFields = ['po_from_partner_id','po_from_open_id','sale_to_open_id','sale_to_partner_id','address_info_id','sender_info_id','first_bill_id',
-            'last_bill_id','goods_id','goods_name','goods_desc','goods_title','number','purchas_price','description',
-            'sale_price','creator_status','logistics_status','logistics_number','logistics_image_id','receiver_status','year',
-            'send_time','goods_image','bill_type'
-            ];
-        $thetime = time();
-        $no1= date('ym',$thetime);
-        // 固定值, 补充或覆盖到 $data 中
-        $openid = $_SESSION['openid'];
-        $fixed = [
-            'creator_open_id' => $openid,
-            'created_at'=>$thetime,
-        ];
-
-        list($fields, $values, $data) = $this->dataForCreate($Rdata, $allowFields, $fixed);
 
         try {
+            // 创建商品
+            $goodsId = $Rdata['goods_id'];
+            if(!$goodsId) {
+
+                $goodsData = [
+                    'name' => $Rdata['goods_title'],
+                    'description' => $Rdata['goods_desc'],
+                    'vendor_id' => $Rdata['vendor_id'],
+                    'purchase_price' => $Rdata['purchas_price'],
+                    'orderby' => 0
+                ];
+
+                if($Rdata['bill_type'] == '3') {
+                    $goodsData['retail_price'] = $Rdata['sale_price'];
+                } else {
+                    $goodsData['wholesale_price'] = $Rdata['sale_price'];
+                }
+
+                //允许外面传入的字段
+                $allowFields = ['name', 'description', 'vendor_id', 'purchase_price', 'wholesale_price', 'retail_price', 'orderby'];
+
+                // 固定值, 补充或覆盖到 $data 中
+                $openid = $_SESSION['openid'];
+                $fixed = [
+                    'openid' => $openid,
+                    'pstatus' => 2,
+                    'last_bill_at' => null,
+                    'deleted_at' => null,
+                ];
+
+                list($fields, $values, $data) = $this->dataForCreate($goodsData, $allowFields, $fixed);
+
+                try {
+                    $sql = "
+                    insert into goods ($fields) values ($values)
+                    ";
+                    list($effected, $goodsId) = $this->fastInsert($sql, $data);
+
+                    if ($effected) {
+                    } else {
+                        return Response::json(false, 351, '未知错误', 0);
+                    }
+                } catch (Exception $e) {
+                    return Response::exception(351, $e);
+                }
+
+                try {
+                    // 处理图片
+                    if ($goodsId && isset($Rdata['goods_image'])) {
+                        $images = is_array($Rdata['goods_image'])
+                            ? $data['goods_image']
+                            : explode(',', $Rdata['goods_image']);
+
+                        $this->createImageList($goodsId, $images);
+                        unset($Rdata['goods_image']);
+                    }
+                } catch (Exception $e) {
+                    // return Response::exception(351, $e);
+                    return Response::json(false, 351, '图片创建未知错误:' . json_encode($Rdata['goods_image']) , 0);
+                }
+
+            }
+
+            if(empty($Rdata['sender_info_id'])) {
+                if(empty($Rdata['sender_name']) && empty($Rdata['sender_phone'])) {
+                    $Rdata['sender_info_id'] = null;
+                } else {
+                    $_sender = array(
+                        'name' => $Rdata['sender_name'],
+                        'phone' => $Rdata['sender_phone'],
+                        'openid' => $openid,
+                        'status' => 0
+                    );
+                    list($fields, $values, $data) = $this->dataForCreate($_sender);
+                    try {
+                        $sql = "insert into sender ($fields) values ($values)";
+                        list($effected, $sender_info_id) = $this->fastInsert($sql, $data);
+                        $Rdata['sender_info_id'] = $sender_info_id;
+
+                    } catch (Exception $e) {
+                        // return Response::exception(351, $e);
+                        return Response::json(false, 351, '发货人创建失败:' . json_encode($_sender) , 0);
+                    }
+                }
+
+
+            }
+
+            //允许外面传入的字段
+            $allowFields = ['po_from_partner_id','po_from_open_id','sale_to_open_id','sale_to_partner_id','address_info_id','sender_info_id','first_bill_id',
+                'last_bill_id','goods_id','goods_name','goods_desc','goods_title','number','purchas_price','description',
+                'sale_price','creator_status','logistics_status','logistics_number','logistics_image_id','receiver_status','year',
+                'send_time','goods_image','bill_type'
+            ];
+            $thetime = time();
+            $no1= date('ym',$thetime);
+            // 固定值, 补充或覆盖到 $data 中
+            $openid = $_SESSION['openid'];
+            $fixed = [
+                'creator_open_id' => $openid,
+                'created_at'=>$thetime,
+                'address_info_id'=>$address_info_id,
+                'goods_id'=>$goodsId,
+                'year'=> date('Y', $thetime),
+            ];
+
+            list($fields, $values, $data) = $this->dataForCreate($Rdata, $allowFields, $fixed);
+
             $sql = "
             insert into bill ($fields) values ($values)
             ";
             list($effected, $lastId) = $this->fastInsert($sql, $data);
-
-            // 处理图片
-//            if ($lastId && isset($data['images'])) {
-//                $this->createImageList($lastId, (array)$data['images']);
-//            }
 
             if ($effected) {
 
@@ -406,8 +493,12 @@ class billController extends \core\myorm_core
                 $stmt2->bindValue(2, $lastId);
                 $effected = $stmt2->execute();
 
-
-                return Response::json(true, 350, '订单创建成功', $lastId);
+                return Response::json(true, 350, '订单创建成功', [
+                    'bill_id' => $lastId,
+                    'goods_id' => $goodsId,
+                    'address_info_id' => $address_info_id,
+                    'order_no' => $real_order_no
+                ]);
             } else {
                 return Response::json(false, 351, '未知错误', 0);
             }
@@ -509,9 +600,12 @@ class billController extends \core\myorm_core
         if ($pk && !empty($images)) {
             $rows= [];
             foreach ($images as $image) {
+                if(empty($image)) {
+                    continue;
+                }
                 $rows[] = [
                     'goods_id' => $pk,
-                    'image_id' => $image
+                    'image_id' => trim($image)
                 ];
             }
             $this->bulkInsert('goods_image', $rows);

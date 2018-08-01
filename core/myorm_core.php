@@ -196,13 +196,16 @@ class myorm_core{
 
     public function bulkInsert(string $tableName, array $rows, $ignoreDuplicate = false)
     {
+        if(empty($rows)) {
+            return;
+        }
         if (!is_array($rows) || !is_array(current($rows))) {
-            throw new Exception("param rows must be a 2D array");
+            throw new \Exception("param rows must be a 2D array:" . json_encode($rows));
         }
 
         $row = current($rows);
         if (empty($row)) {
-            throw new Exception("param rows must be a 2D array");
+            throw new \Exception("param rows must be a 2D array");
         }
 
         $fields = array_keys($row);

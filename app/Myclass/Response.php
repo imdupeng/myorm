@@ -19,8 +19,9 @@ class Response
         if (!is_bool($status) || !is_numeric($code)){
             return false;
         }
-        $res = ['status'=>$status,'code'=>$code,'message'=>$message,'data'=>$data];
-
+        $obc = ob_get_contents();
+        ob_clean();
+        $res = ['status'=>$status,'code'=>$code,'message'=>$message,'data'=>$data,'debug'=>$obc];
 
             echo json_encode($res);
 

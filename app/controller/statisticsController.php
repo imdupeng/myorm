@@ -13,11 +13,7 @@ class statisticsController extends \core\myorm_core
 {
     public function __construct()
     {
-        //检测是否登录
-        if(!empty($_POST['PHPSESSID'])){
-            session_id($_POST['PHPSESSID']);
-            session_start();
-        }
+        parent::startSession();
         if (empty($_SESSION['openid'])) {
             $status = false;
             $code = 257;
@@ -28,6 +24,16 @@ class statisticsController extends \core\myorm_core
     }
 
     public function culcuTime($type = 1){
+        if ($type == 10){
+            //获取最近7天起始时间戳和结束时间戳
+            $theTime['starttime']= strtotime("-7 day", mktime(0,0,0,date('m'),date('d'),date('Y')));
+            $theTime['endtime']= now();
+        }
+        if ($type == 11){
+            //获取最近30天起始时间戳和结束时间戳
+            $theTime['starttime']= strtotime("-30 day", mktime(0,0,0,date('m'),date('d'),date('Y')));
+            $theTime['endtime']= now();
+        }
         if ($type == 8){
             //获取今日起始时间戳和结束时间戳
             $theTime['starttime']=mktime(0,0,0,date('m'),date('d'),date('Y'));
