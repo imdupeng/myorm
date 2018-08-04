@@ -39,15 +39,15 @@ class productController extends \core\myorm_core{
             else
             {
 
-                if (file_exists("upload/" . $_FILES["file"]["name"]))
+                if (file_exists("images/" . $_FILES["file"]["name"]))
                 {
                     return Response::json(false, 352, $_FILES["file"]["name"].' already exists. ', 0);
                 }
                 else
                 {
                     move_uploaded_file($_FILES["file"]["tmp_name"],
-                        "upload/" . $_FILES["file"]["name"]);
-                    return Response::json(true, 350, 'upload success!', "upload/" . $_FILES["file"]["name"]);
+                        "images/" . $_FILES["file"]["name"]);
+                    return Response::json(true, 350, 'upload success!', "images/" . $_FILES["file"]["name"]);
                     $pdo = new \core\lib\model;
                     $sql1 = "insert into image(id,path,file_name,hash) values()";
                     $stmt = $pdo->query($sql1);
@@ -64,7 +64,7 @@ class productController extends \core\myorm_core{
     /*
      * 获取商品列表,分页
      * */
-    public function update(){
+    public function modify(){
         $data = $_REQUEST['data'] ?? [];
 //        $data = $_REQUEST ?? [];//方便get提交测试
         $pk = $_REQUEST['id'] ?? 0;

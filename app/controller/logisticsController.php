@@ -160,7 +160,7 @@ class logisticsController extends \core\myorm_core
      * 运单更新
      * http://118.126.112.43:8080/index.php/logistics/create
      * */
-    public function update()
+    public function modify()
     {
         $data = (array)($_REQUEST ?? []);
         $pk = (int)($_REQUEST['id'] ?? 0);

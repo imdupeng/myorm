@@ -135,7 +135,7 @@ class senderController extends \core\myorm_core{
      * 更新发货人信息
      * http://118.126.112.43:8080/index.php/sender/update
      * */
-    public function update(){
+    public function modify(){
         $data = (array)($_REQUEST ?? []);
         $pk = (int)($_REQUEST['id'] ?? 0);
 

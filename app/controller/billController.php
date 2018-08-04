@@ -24,11 +24,52 @@ class billController extends \core\myorm_core
         }
     }
 
+
+    //通过openid获取用户姓名
+    public function loadPartnerNames(array $partnersOpenid, $openid){
+        if (empty($openid)){
+            return [];
+        }
+        $openidList = implode(',', $partnersOpenid);
+        $sql = "select partner_openid, name from partner
+        where openid = :_openid
+          and partner_openid in ($openidList)
+        ";
+        $stmt = $this->fastQuery($sql, ['_openid' => $openid]);
+        $names = $stmt->fetch(\PDO::FETCH_ASSOC);
+        foreach($names as $v) {
+            $this->partnerNames[$v['partner_openid']] = $v['name'];
+        }
+        return $this->partnerNames;
+    }
+
+    //通过openid获取用户姓名
+    public function loadPartners(array $partnersId, $openid){
+        if (empty($partnersId)){
+            return [];
+        }
+        $idList = implode(',', $partnersId);
+        $sql = "select id, partner_openid, name from partner
+        where openid = :_openid
+          and id in ($idList)
+        ";
+        $stmt = $this->fastQuery($sql, ['_openid' => $openid]);
+        $names = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        foreach($names as $v) {
+            $this->partners[$v['id']] = $v;
+        }
+        return $this->partners;
+    }
+
     //通过openid获取用户姓名
     public function getNameByOpenid($openid){
         if (empty($openid)){
             return false;
         }
+        if(isset($this->partnerNames[$openid])) {
+            return $this->partnerNames[$openid];
+        }
+
         $sql = "select name from partner where openid=:_openid";
         $stmt = $this->fastQuery($sql, ['_openid' => $openid]);
         $name = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -68,7 +109,7 @@ class billController extends \core\myorm_core
             'bill.creator_status',//创建人处理状态 1未发送 2已发送
             'bill.logistics_status',//物流状态 1未发运 2已发运
             'bill.logistics_number',
-            'image.path',//已处理 bill.logistics_image_id = image.id
+            // 'image.path',//已处理 bill.logistics_image_id = image.id
             'bill.receiver_status',
             'bill.year',
             'bill.created_at',
@@ -109,18 +150,14 @@ class billController extends \core\myorm_core
                 $creator_status 
                 $bill_type
                $filterString
+            order by bill.id desc
             limit $offset, $pageSize
         ";
         $param['_openid'] = $openid;
         $stmt = $this->fastQuery($sql2, $param);
         $list = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        //添加供货商和买家名字
-        foreach ($list as $kk=>$vv){
-            $list[$kk]['salername'] = $this->getNameByOpenid($vv['po_from_open_id']);
-            $list[$kk]['buyername'] = $this->getNameByOpenid($vv['sale_to_open_id']);
-        }
 
-        $data['list'] = $list;
+        $data['list'] = $this->formatList($list, $openid);
         return Response::json(true, 350, '查询订单成功', $data);
     }
 
@@ -139,7 +176,7 @@ class billController extends \core\myorm_core
         $fields = implode(', ', [
             'bill.id',
             'bill.order_no',
-            'user.name',//bill.creator_open_id=user.open_id
+            // 'user.name',//bill.creator_open_id=user.open_id
             'bill.po_from_open_id',//待处理
             'bill.po_from_partner_id',//待处理
             'bill.sale_to_open_id',//待处理
@@ -158,7 +195,7 @@ class billController extends \core\myorm_core
             'bill.creator_status',//创建人处理状态 1未发送 2已发送
             'bill.logistics_status',//物流状态 1未发运 2已发运
             'bill.logistics_number',
-            'image.path',//已处理 bill.logistics_image_id = image.id
+            // 'image.path',//已处理 bill.logistics_image_id = image.id
             'bill.receiver_status',
             'bill.year',
             'bill.created_at',
@@ -193,8 +230,8 @@ class billController extends \core\myorm_core
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
         $sql2 = "
             select $fields from bill 
-              left join image on bill.logistics_image_id = image.id
-              left join user on bill.creator_open_id=user.open_id
+            --  left join image on bill.logistics_image_id = image.id
+            --   left join user on bill.creator_open_id=user.open_id
              where po_from_open_id =:_openid
                 $creator_status 
                 $bill_type
@@ -204,13 +241,55 @@ class billController extends \core\myorm_core
         $param['_openid'] = $openid;
         $stmt = $this->fastQuery($sql2, $param);
         $list = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        foreach ($list as $kk=>$vv){
-            $list[$kk]['salername'] = $this->getNameByOpenid($vv['po_from_open_id']);
-            $list[$kk]['buyername'] = $this->getNameByOpenid($vv['sale_to_open_id']);
-        }
-        $data['list'] = $list;
+
+        $data['list'] = $this->formatList($list, $openid);
 
         return Response::json(true, 350, '查询订单成功', $data);
+    }
+
+    protected function formatList(array $list, $openid) {
+
+        $goodsList = [];
+        // $partnersOpenid = [];
+        $partnersId = [];
+        $images = [];
+        foreach ($list as $kk=>$vv) {
+            $partnersId[] = $vv['sale_to_partner_id'];
+            $partnersId[] = $vv['po_from_partner_id'];
+            // $partnersOpenid[] = $vv['po_from_open_id'];
+            // $partnersOpenid[] = $vv['sale_to_open_id'];
+            $goodsList[] = $vv['goods_id'];
+        }
+
+        if ($goodsList) {
+            $goodsList = implode(',', $goodsList);
+            $sql3 = "select image.path as image, image.id, goods_image.goods_id from image 
+              left join `goods_image` on goods_image.image_id = image.id
+             where goods_id in ($goodsList)
+             group by goods_image.goods_id";
+            $stmt = $this->fastQuery($sql3);
+            $imageList = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            foreach($imageList as $img) {
+                $images[$img['goods_id']] = $img['image'];
+            }
+        }
+
+        //添加供货商和买家名字
+        // $this->loadPartnerNames($partnersOpenid, $openid);
+        $this->loadPartners($partnersId, $openid);
+        foreach ($list as $kk=>$vv){
+            $list[$kk]['salername'] = isset($this->partners[$vv['sale_to_partner_id']]['name'])
+                ? $this->partners[$vv['sale_to_partner_id']]['name'] 
+                : '';
+            $list[$kk]['buyername'] = isset($this->partners[$vv['po_from_partner_id']]['name'])
+                ? $this->partners[$vv['po_from_partner_id']]['name'] 
+                : '';
+            // $list[$kk]['salername'] = $this->getNameByOpenid($vv['po_from_open_id']);
+            // $list[$kk]['buyername'] = $this->getNameByOpenid($vv['sale_to_open_id']);
+            $list[$kk]['image'] = isset($images[$vv['goods_id']]) ? $images[$vv['goods_id']] : '';
+        }
+
+        return $list;
     }
 
     /*
@@ -247,7 +326,7 @@ class billController extends \core\myorm_core
             'bill.creator_status',//创建人处理状态 1未发送 2已发送
             'bill.logistics_status',//物流状态 1未发运 2已发运
             'bill.logistics_number',
-            'image.path',//已处理 bill.logistics_image_id = image.id
+            // 'image.path',//已处理 bill.logistics_image_id = image.id
             'bill.receiver_status',
             'bill.year',
             'bill.created_at',
@@ -263,7 +342,6 @@ class billController extends \core\myorm_core
         $openid = $_SESSION['openid'];
         $sql2 = "
             select $fields from bill 
-              left join image on bill.logistics_image_id = image.id
               left join user on bill.creator_open_id=user.open_id
               left join sender on sender.id=bill.sender_info_id
               left join address on address.partner_id=bill.sale_to_open_id
@@ -278,6 +356,14 @@ class billController extends \core\myorm_core
             // 查看代理商发来的订单时候, 不显示其销售价
             unset($data['sale_price']);
         }
+
+        $sql3 = "select image.path as image, image.id from image 
+              left join `goods_image` on goods_image.image_id = image.id
+             where (goods_id=:goods_id)";
+        $stmt = $this->fastQuery($sql3, ['goods_id' => $data['goods_id']]);
+        $images = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $data['images' ] = (array)$images;
+
         return Response::json(true, 350, '查询订单成功', $data);
     }
 
@@ -475,6 +561,12 @@ class billController extends \core\myorm_core
                 'year'=> date('Y', $thetime),
             ];
 
+            //@TODO 合作伙伴id 转 openid
+            // sale_to_partner_id;
+            // po_from_partner_id;
+            // po_from_open_id;
+            // sale_to_open_id;
+
             list($fields, $values, $data) = $this->dataForCreate($Rdata, $allowFields, $fixed);
 
             $sql = "
@@ -518,7 +610,7 @@ class billController extends \core\myorm_core
      * 订单更新
      * http://118.126.112.43:8080/index.php/bill/update
      * */
-    public function update()
+    public function modify()
     {
 
         if (empty($_REQUEST['order_no'])){

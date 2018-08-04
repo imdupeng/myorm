@@ -71,7 +71,9 @@ class userController extends \core\myorm_core
             //没有出错
             //加限制条件
             //判断上传文件类型为png或jpg且大小不超过1024000B
-            if (($_FILES["file"]["type"] == "image/png" || $_FILES["file"]["type"] == "image/jpeg") && $_FILES["file"]["size"] < 10240000) {
+
+            $imageTypes = ["image/gif", "image/jpeg", "image/pjpeg", "image/jpg", "image/png"];
+            if ( in_array($_FILES["file"]["type"], $imageTypes) && $_FILES["file"]["size"] < 10240000) {
                 //防止文件名重复
                 $name = $_FILES["file"]["name"];
                 $filename = "./images/" . $_FILES["file"]["name"];
@@ -93,7 +95,7 @@ class userController extends \core\myorm_core
 //                    return [true, 250, '文件上传成功', $addId];
                 }
             } else {
-                return Response::json(false, 252, '文件类型不对', 0);
+                return Response::json(false, 252, '文件类型不对' . $_FILES["file"]["type"], 0);
 //                return [false, 252, '文件类型不对', 0];
             }
         }

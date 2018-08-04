@@ -124,7 +124,7 @@ class productController extends \core\myorm_core
               left join image on goods_image.image_id = image.id
              where pstatus=2
                $filterString
-            order by orderby desc
+            order by goods.id desc
             limit $offset, $pageSize
         ";
         }
@@ -244,7 +244,8 @@ class productController extends \core\myorm_core
              where openid=:_openid
              and pstatus=2
                $filterString
-            order by orderby desc
+            group by goods.id
+            order by goods.id desc
             limit $offset, $pageSize
         ";
         }
@@ -353,8 +354,11 @@ class productController extends \core\myorm_core
             list($effected, $lastId) = $this->fastInsert($sql, $data);
 
             // 处理图片
-            if ($lastId && isset($data['images'])) {
-                $this->createImageList($lastId, (array)$data['images']);
+            if ($lastId && isset($Rdata['images'])) {
+                if(!is_array($Rdata['images'])) {
+                    $Rdata['images'] = explode(',', $Rdata['images']);
+                }
+                $this->createImageList($lastId, $Rdata['images']);
             }
 
             if ($effected) {
@@ -370,7 +374,7 @@ class productController extends \core\myorm_core
     /*
      * 商品更新
      * */
-    public function update()
+    public function modify()
     {
         $data = (array)($_REQUEST ?? []);
         $pk = (int)($_REQUEST['id'] ?? 0);
