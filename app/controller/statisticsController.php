@@ -86,15 +86,15 @@ class statisticsController extends \core\myorm_core
      * http://118.126.112.43:8080/index.php?r=statistics/buyer_OrderNumRank
      * */
     public function buyer_OrderNumRank(){
-        if ($_REQUEST['type']){
+        if (!empty($_REQUEST['type'])){
             $type = $_REQUEST['type'];
         }else{
             $type = 1;
         }
-        if ($_REQUEST['num']){
-            $type = $_REQUEST['num'];
+        if (!empty($_REQUEST['num'])){
+            $num = $_REQUEST['num'];
         }else{
-            $type = 10;
+            $num = 10;
         }
         $theTime = $this->culcuTime($type);
         $pdo = new \core\lib\model;
@@ -113,15 +113,15 @@ class statisticsController extends \core\myorm_core
      * 2回头客：客户总订额排名
      * */
     public function buyer_OrderAmountRank(){
-        if ($_REQUEST['type']){
+        if (!empty($_REQUEST['type'])){
             $type = $_REQUEST['type'];
         }else{
             $type = 1;
         }
-        if ($_REQUEST['num']){
-            $type = $_REQUEST['num'];
+        if (!empty($_REQUEST['num'])){
+            $num = $_REQUEST['num'];
         }else{
-            $type = 10;
+            $num = 10;
         }
         $theTime = $this->culcuTime($type);
         $pdo = new \core\lib\model;
@@ -139,15 +139,15 @@ class statisticsController extends \core\myorm_core
      * 3回头客：客户平均单价排名
      * */
     public function buyer_EverageAmountRank(){
-        if ($_REQUEST['type']){
+        if (!empty($_REQUEST['type'])){
             $type = $_REQUEST['type'];
         }else{
             $type = 1;
         }
-        if ($_REQUEST['num']){
-            $type = $_REQUEST['num'];
+        if (!empty($_REQUEST['num'])){
+            $num = $_REQUEST['num'];
         }else{
-            $type = 10;
+            $num = 10;
         }
         $theTime = $this->culcuTime($type);
         $pdo = new \core\lib\model;
@@ -166,15 +166,15 @@ class statisticsController extends \core\myorm_core
      * 4回头客：客户利润排名
      * */
     public function buyer_ProfitRank(){
-        if ($_REQUEST['type']){
+        if (!empty($_REQUEST['type'])){
             $type = $_REQUEST['type'];
         }else{
             $type = 1;
         }
-        if ($_REQUEST['num']){
-            $type = $_REQUEST['num'];
+        if (!empty($_REQUEST['num'])){
+            $num = $_REQUEST['num'];
         }else{
-            $type = 10;
+            $num = 10;
         }
         $theTime = $this->culcuTime($type);
         $pdo = new \core\lib\model;
@@ -193,15 +193,15 @@ class statisticsController extends \core\myorm_core
      * 5代理商：订单量排名
      * */
     public function Agent_OrderNumRank(){
-        if ($_REQUEST['type']){
+        if (!empty($_REQUEST['type'])){
             $type = $_REQUEST['type'];
         }else{
             $type = 1;
         }
-        if ($_REQUEST['num']){
-            $type = $_REQUEST['num'];
+        if (!empty($_REQUEST['num'])){
+            $num = $_REQUEST['num'];
         }else{
-            $type = 10;
+            $num = 10;
         }
         $theTime = $this->culcuTime($type);
         $pdo = new \core\lib\model;
@@ -220,15 +220,15 @@ class statisticsController extends \core\myorm_core
      * 6代理商：订单总额排名
      * */
     public function Agent_OrderAmountRank(){
-        if ($_REQUEST['type']){
+        if (!empty($_REQUEST['type'])){
             $type = $_REQUEST['type'];
         }else{
             $type = 1;
         }
-        if ($_REQUEST['num']){
-            $type = $_REQUEST['num'];
+        if (!empty($_REQUEST['num'])){
+            $num = $_REQUEST['num'];
         }else{
-            $type = 10;
+            $num = 10;
         }
         $theTime = $this->culcuTime($type);
         $pdo = new \core\lib\model;
@@ -246,15 +246,15 @@ class statisticsController extends \core\myorm_core
      * 7代理商：平均单价排名
      * */
     public function Agent_EverageAmountRank(){
-        if ($_REQUEST['type']){
+        if (!empty($_REQUEST['type'])){
             $type = $_REQUEST['type'];
         }else{
             $type = 1;
         }
-        if ($_REQUEST['num']){
-            $type = $_REQUEST['num'];
+        if (!empty($_REQUEST['num'])){
+            $num = $_REQUEST['num'];
         }else{
-            $type = 10;
+            $num = 10;
         }
         $theTime = $this->culcuTime($type);
         $pdo = new \core\lib\model;
@@ -273,15 +273,15 @@ class statisticsController extends \core\myorm_core
      * 8代理商：利润排名
      * */
     public function Agent_ProfitRank(){
-        if ($_REQUEST['type']){
+        if (!empty($_REQUEST['type'])){
             $type = $_REQUEST['type'];
         }else{
             $type = 1;
         }
-        if ($_REQUEST['num']){
-            $type = $_REQUEST['num'];
+        if (!empty($_REQUEST['num'])){
+            $num = $_REQUEST['num'];
         }else{
-            $type = 10;
+            $num = 10;
         }
         $theTime = $this->culcuTime($type);
         $pdo = new \core\lib\model;
@@ -300,15 +300,15 @@ class statisticsController extends \core\myorm_core
      * 9商品：销量排名
      * */
     public function Goods_SaleNumRank(){
-        if ($_REQUEST['type']){
+        if (!empty($_REQUEST['type'])){
             $type = $_REQUEST['type'];
         }else{
             $type = 1;
         }
-        if ($_REQUEST['num']){
-            $type = $_REQUEST['num'];
+        if (!empty($_REQUEST['num'])){
+            $num = $_REQUEST['num'];
         }else{
-            $type = 10;
+            $num = 10;
         }
         $theTime = $this->culcuTime($type);
         $pdo = new \core\lib\model;
@@ -327,15 +327,15 @@ class statisticsController extends \core\myorm_core
      * 10商品：利润率排名
      * */
     public function Goods_ProfitRank(){
-        if ($_REQUEST['type']){
+        if (!empty($_REQUEST['type'])){
             $type = $_REQUEST['type'];
         }else{
             $type = 1;
         }
-        if ($_REQUEST['num']){
-            $type = $_REQUEST['num'];
+        if (!empty($_REQUEST['num'])){
+            $num = $_REQUEST['num'];
         }else{
-            $type = 10;
+            $num = 10;
         }
         $theTime = $this->culcuTime($type);
         $pdo = new \core\lib\model;
