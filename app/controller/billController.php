@@ -131,14 +131,18 @@ class billController extends \core\myorm_core
         $param  = [];
         $keywords = (string)($_REQUEST['keywords'] ?? '');
         if ($keywords) {
-            list($filter1, $paramName, $search) = $this->fulltextSearch(['goods.name', 'goods.description'], $keywords, 'keywords');
+            list($filter1, $paramName, $search) = $this->fulltextSearch(['goods_title', 'goods_desc'], $keywords, 'keywords');
             $filters[] = $filter1;
             $param[$paramName] = $search;
 
             //添加搜索记录
-            $sql3 = "insert into search_history (openid,keywords,created_at) values ($openid,$keywords,time())";
-            $param3= [];
-            $stmt = $this->fastQuery($sql3, $param3);
+            list($_fields, $_values, $_data) = $this->dataForCreate([
+                'openid' =>  $openid,
+                'keywords' => $keywords,
+                'created_at' => time()
+            ]);
+            $sql = "insert into search_history ($_fields) values ($_values)";
+            list($effected, $sender_info_id) = $this->fastInsert($sql, $_data);
         }
 
         $filterString = $filters ? 'and ' . implode(' AND ', $filters) : '';
@@ -336,6 +340,8 @@ class billController extends \core\myorm_core
             'address.name as buyer_name',
             'address.phone as buyer_phone',
             'address.address as buyer_address',
+            'bill.logistics_image_id',
+            'bill.bill_type'
         ]);
 
         $param  = [];
