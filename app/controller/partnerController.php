@@ -228,19 +228,19 @@ class partnerController extends \core\myorm_core{
             'status',
         ]);
 
-        $param  = [];
+//        $param  = [];
         $pk = (string)($_REQUEST['id'] ?? '');
-        $openid = $_SESSION['openid'];
+        $open_id = $_SESSION['openid'];
         $sql2 = "
             select $fields from partner
              where openid=:_openid
                and id=:pk
         ";
         $params = [
-            'id' => $pk,
-            '_openid' => $openid,
+            'pk' => $pk,
+            '_openid' => $open_id,
         ];
-        $stmt = $this->fastQuery($sql2, $param);
+        $stmt = $this->fastQuery($sql2, $params);
 
         $data = $stmt->fetch(\PDO::FETCH_ASSOC);
 
