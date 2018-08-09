@@ -30,15 +30,15 @@ class billController extends \core\myorm_core
         if (empty($openid)){
             return [];
         }
-        $openidList = implode(',', $partnersOpenid);
-        $sql = "select partner_openid, name from partner
+        $openidList = '\'' . implode('\',\'', $partnersOpenid) . '\'';
+        $sql = "select id, partner_openid, name from partner
         where openid = :_openid
           and partner_openid in ($openidList)
         ";
         $stmt = $this->fastQuery($sql, ['_openid' => $openid]);
         $names = $stmt->fetch(\PDO::FETCH_ASSOC);
         foreach($names as $v) {
-            $this->partnerNames[$v['partner_openid']] = $v['name'];
+            $this->partnerNames[$v['partner_openid']] = $v;
         }
         return $this->partnerNames;
     }
@@ -180,22 +180,16 @@ class billController extends \core\myorm_core
         $fields = implode(', ', [
             'bill.id',
             'bill.order_no',
-            // 'user.name',//bill.creator_open_id=user.open_id
-            'bill.po_from_open_id',//待处理
-            'bill.po_from_partner_id',//待处理
-            'bill.sale_to_open_id',//待处理
-            'bill.sale_to_partner_id',//待处理
+            'bill.creator_open_id',// 代理商
             'bill.address_info_id',//处理合并地址
             'bill.sender_info_id',//处理合并发货人信息
             'bill.first_bill_id',
-            'bill.last_bill_id',
             'bill.goods_id',
             'bill.goods_desc',
             'bill.goods_title',
             'bill.number',
             'bill.purchas_price',
             'bill.description',
-            'bill.sale_price',
             'bill.creator_status',//创建人处理状态 1未发送 2已发送
             'bill.logistics_status',//物流状态 1未发运 2已发运
             'bill.logistics_number',
@@ -246,9 +240,47 @@ class billController extends \core\myorm_core
         $stmt = $this->fastQuery($sql2, $param);
         $list = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        $data['list'] = $this->formatList($list, $openid);
+        $data['list'] = $this->formatPoList($list, $openid);
 
         return Response::json(true, 350, '查询订单成功', $data);
+    }
+
+    protected function formatPoList(array $list, $openid) {
+
+        $goodsList = [];
+        $partnersOpenid = [];
+        $images = [];
+        foreach ($list as $kk=>$vv) {
+            $partnersOpenid[] = $vv['creator_open_id'];
+            $goodsList[] = $vv['goods_id'];
+        }
+
+        if ($goodsList) {
+            $goodsList = implode(',', $goodsList);
+            $sql3 = "select image.path as image, image.id, goods_image.goods_id from image 
+              left join `goods_image` on goods_image.image_id = image.id
+             where goods_id in ($goodsList)
+             group by goods_image.goods_id";
+            $stmt = $this->fastQuery($sql3);
+            $imageList = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            foreach($imageList as $img) {
+                $images[$img['goods_id']] = $img['image'];
+            }
+        }
+
+        //添加代理商的名字
+        $this->loadPartnerNames($partnersOpenid, $openid);
+        foreach ($list as $kk=>$vv){
+            $list[$kk]['buyername'] = isset($this->partnerNames[$vv['creator_open_id']]['name'])
+                ? $this->partnerNames[$vv['creator_open_id']]['name'] 
+                : '';
+            $list[$kk]['buyerid'] = isset($this->partnerNames[$vv['creator_open_id']]['id'])
+                ? $this->partnerNames[$vv['creator_open_id']]['id'] 
+                : '';
+            $list[$kk]['image'] = isset($images[$vv['goods_id']]) ? $images[$vv['goods_id']] : '';
+        }
+
+        return $list;
     }
 
     protected function formatList(array $list, $openid) {
@@ -432,7 +464,7 @@ class billController extends \core\myorm_core
 
         $pdo = new \core\lib\model;
         
-        if ($address_info_id > 0) {
+        if ($Rdata['bill_type'] == 3 && $address_info_id > 0) {
             // 判断地址是否变化;
             $addressInfo = $pdo->query("select name,phone,address from address where id = $address_info_id")->fetch(\PDO::FETCH_ASSOC);
             $address = [
@@ -579,6 +611,17 @@ class billController extends \core\myorm_core
             insert into bill ($fields) values ($values)
             ";
             list($effected, $lastId) = $this->fastInsert($sql, $data);
+
+            // 将代理商订单标记为已处理
+            if ($Rdata['bill_type'] == 2 && $Rdata['last_bill_id'] > 0) {
+                $sql4 = "update bill set receiver_status = 2
+                    where id = ? and po_from_open_id = ?";
+                $pdo2 = new \core\lib\model;
+                $stmt2 = $pdo2->prepare($sql4);
+                $stmt2->bindValue(1, $Rdata['last_bill_id']);
+                $stmt2->bindValue(2, $openid);
+                $effected = $stmt2->execute();
+            }
 
             if ($effected) {
 
