@@ -761,28 +761,28 @@ class billController extends \core\myorm_core
      * */
     public function del()
     {
-        $pk = (int)($_REQUEST['id'] ?? 0);
-
+        $pk = (int)($_REQUEST['order_no'] ?? 0);
+        $thetime = time();
         $data = [
-            'deleted_at' => time(),
-            'pstatus' => 4,
+            'deleted_at' => $thetime,
+            'order_no' => $pk,
         ];
 
-        $allowFields = []; //允许外面传入的字段
-        list($fields, $data) = $this->dataForUpdate($data, $allowFields);
+        $allowFields = ['order_no','deleted_at']; //允许外面传入的字段
+        $aaaa = list($fields, $data) = $this->dataForUpdate($data, $allowFields);
         $openid = $_SESSION['openid'];
         try {
             $sql = "
-            update goods
+            update bill
                set $fields
-             where id = :id 
-               and openid = :_openid;
+             where order_no = :order_no 
+               and creator_open_id = :creator_open_id;
             ";
 
             // 条件上的参数,注意不要与字段名重复
             $params = [
-                'id' => $pk,
-                '_openid' => $openid,
+                'order_no' => $pk,
+                'creator_open_id' => $openid,
             ];
 
             $effected = $this->fastUpdate($sql, $data, $params);
