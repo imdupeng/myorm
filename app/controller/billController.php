@@ -1055,7 +1055,8 @@ class billController extends \core\myorm_core
             $bill_data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $first_bill_id = $bill_data[0]['first_bill_id'];
             try {
-            $sql2 = "update bill set logistics_number=:logisticsnumber,logistics_name=:logisticsname where first_bill_id=:fbd";
+                $nowtime = time();
+            $sql2 = "update bill set logistics_number=:logisticsnumber,logistics_name=:logisticsname,logistics_time='$nowtime',logistics_status=2 where first_bill_id=:fbd";
             $stmt2 = $pdo->prepare($sql2);
             $stmt2->bindValue(':logisticsnumber', $logistics_number);
             $stmt2->bindValue(':logisticsname', $logistics_name);
