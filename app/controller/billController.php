@@ -904,6 +904,9 @@ class billController extends \core\myorm_core
     //添加发货
     public function addLogistics_number(){
         if (!empty($_REQUEST['logistics_number']) && !empty($_REQUEST['order_no'])){
+            if(!empty($_REQUEST['logistics_name']){
+                $logistics_name = $_REQUEST['logistics_name'];
+            }
             $logistics_number = $_REQUEST['logistics_number'];
             $order_no = $_REQUEST['order_no'];
 
@@ -917,9 +920,10 @@ class billController extends \core\myorm_core
             $first_bill_id = $bill_data[0]['first_bill_id'];
 
             try {
-            $sql2 = "update bill set logistics_number=:logisticsnumber where first_bill_id=:fbd";
+            $sql2 = "update bill set logistics_number=:logisticsnumber,logistics_name=:logisticsname where first_bill_id=:fbd";
             $stmt2 = $pdo->prepare($sql2);
             $stmt2->bindValue(':logisticsnumber', $logistics_number);
+            $stmt2->bindValue(':logisticsname', $logistics_name);
             $stmt2->bindValue(':fbd', $first_bill_id);
             $stmt2->execute();
             $rownum = $stmt->rowCount();//影响行数
