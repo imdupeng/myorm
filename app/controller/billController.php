@@ -329,82 +329,6 @@ class billController extends \core\myorm_core
     }
 
     /*
-     * 查看代理商订单详情
-     * @param int $id 订单id
-     * http://118.126.112.43:8080/index.php/bill/viewPOBill
-     * */
-    public function viewPOBill()
-    {
-        if (empty($_REQUEST['order_no'])){
-            return Response::json(false, 359, '缺少订单id！', []);
-        }else{
-            $order_no = (int)$_REQUEST['order_no'];
-        }
-        $fields = implode(', ', [
-            'bill.id',
-            'bill.order_no',
-            'bill.creator_open_id',//bill.creator_open_id=user.open_id
-            'bill.address_info_id',//处理合并地址
-            'bill.sender_info_id',//处理合并发货人信息
-            'bill.first_bill_id',
-            'bill.last_bill_id',
-            'bill.goods_id',
-            'bill.goods_desc',
-            'bill.goods_title',
-            'bill.number',
-            'bill.purchas_price',
-            'bill.description',
-            'bill.logistics_status',//物流状态 1未发运 2已发运
-            'bill.logistics_number',
-            'bill.logistics_time',
-            // 'image.path',//已处理 bill.logistics_image_id = image.id
-            'bill.receiver_status',
-            'bill.year',
-            'bill.created_at',
-            'bill.send_time',
-            'sender.name as sender_name',
-            'sender.phone as sender_phone',
-            'address.name as buyer_name',
-            'address.phone as buyer_phone',
-            'address.address as buyer_address',
-            'bill.bill_type'
-        ]);
-
-        $param  = [];
-        $openid = $_SESSION['openid'];
-        $sql2 = "
-            select $fields from bill 
-              left join user on bill.creator_open_id=user.open_id
-              left join sender on sender.id=bill.sender_info_id
-              left join address on address.partner_id=bill.sale_to_open_id
-             where (po_from_open_id=:_openid)
-               and order_no=:_order_no";
-        $param['_openid'] = $openid;
-        $param['_order_no'] = $order_no;
-        $stmt = $this->fastQuery($sql2, $param);
-        $data = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        $sql3 = "select image.path as image, image.id from image 
-              left join `goods_image` on goods_image.image_id = image.id
-             where (goods_id=:goods_id)";
-        $stmt = $this->fastQuery($sql3, ['goods_id' => $data['goods_id']]);
-        $images = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        $data['images' ] = (array)$images;
-
-        //添加代理商的名字
-        $partnersOpenid = [$data['creator_open_id']];
-        $this->loadPartnerNames($partnersOpenid, $openid);
-        $data['buyername'] = isset($this->partnerNames[$data['creator_open_id']]['name'])
-            ? $this->partnerNames[$data['creator_open_id']]['name'] 
-            : '';
-        $data['buyerid'] = isset($this->partnerNames[$data['creator_open_id']]['id'])
-            ? $this->partnerNames[$data['creator_open_id']]['id'] 
-            : '';
-
-        return Response::json(true, 350, '查询订单成功', $data);
-    }
-
-    /*
      * 获取订单详情
      * @param int $id 订单id
      * http://118.126.112.43:8080/index.php/bill/view
@@ -448,6 +372,7 @@ class billController extends \core\myorm_core
             'address.name as buyer_name',
             'address.phone as buyer_phone',
             'address.address as buyer_address',
+            'bill.logistics_image_id',
             'bill.bill_type'
         ]);
 
@@ -458,12 +383,17 @@ class billController extends \core\myorm_core
               left join user on bill.creator_open_id=user.open_id
               left join sender on sender.id=bill.sender_info_id
               left join address on address.partner_id=bill.sale_to_open_id
-             where (creator_open_id=:_openid)
+             where (creator_open_id=:_openid OR po_from_open_id=:_openid)
                and order_no=:_order_no";
         $param['_openid'] = $openid;
         $param['_order_no'] = $order_no;
         $stmt = $this->fastQuery($sql2, $param);
         $data = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if($data['po_from_open_id'] == $openid) {
+            // 查看代理商发来的订单时候, 不显示其销售价
+            unset($data['sale_price']);
+        }
 
         $sql3 = "select image.path as image, image.id from image 
               left join `goods_image` on goods_image.image_id = image.id
@@ -971,6 +901,66 @@ class billController extends \core\myorm_core
 
     }
 
-    #
+    public function kuaidi($no){
+        $host = "https://cexpress.market.alicloudapi.com";
+        $path = "/cexpress";
+        $method = "GET";
+        $appcode = "e4baf48b6a2d4279b38fadee89cf165d";
+        $headers = array();
+        array_push($headers, "Authorization:APPCODE " . $appcode);
+        $querys = "no=".$no;
+        $bodys = "";
+        $url = $host . $path . "?" . $querys;
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_FAILONERROR, false);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_HEADER, false);
+        if (1 == strpos("$".$host, "https://"))
+        {
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+        }
+        $data = curl_exec($curl);
+        curl_close($curl);
+//        print_r($data);
+        return $data;
+    }
+
+    //添加发货
+    public function addLogistics_number(){
+        if (!empty($_REQUEST['logistics_number']) && !empty($_REQUEST['order_no'])){
+            $logistics_number = $_REQUEST['logistics_number'];
+            $order_no = $_REQUEST['order_no'];
+            $kuaidijson = $this->kuaidi($logistics_number);
+            $kuaididata = json_decode($kuaidijson,true);
+            $logistics_name = $kuaididata['type'];
+            $pdo = new \core\lib\model;
+            $sql = "select first_bill_id from bill where order_no=:orderno";
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':orderno', $order_no);
+            $stmt->execute();
+            $bill_data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $first_bill_id = $bill_data[0]['first_bill_id'];
+
+            try {
+            $sql2 = "update bill set logistics_number=:logisticsnumber,logistics_name=:logisticsname where first_bill_id=:fbd";
+            $stmt2 = $pdo->prepare($sql2);
+            $stmt2->bindValue(':logisticsnumber', $logistics_number);
+            $stmt2->bindValue(':logisticsname', $logistics_name);
+            $stmt2->bindValue(':fbd', $first_bill_id);
+            $stmt2->execute();
+            $rownum = $stmt->rowCount();//影响行数
+            return Response::json(true, 350, '更新成功', $kuaididata);
+            } catch(Exception $e) {
+                return Response::exception(351, $e);
+            }
+        }else{
+            return Response::json(false, 453, '订单编号和物流单号都不能为空！', []);
+        }
+    }
 
 }
