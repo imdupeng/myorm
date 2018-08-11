@@ -905,7 +905,7 @@ class billController extends \core\myorm_core
         $host = "https://cexpress.market.alicloudapi.com";
         $path = "/cexpress";
         $method = "GET";
-        $appcode = "e4baf48b6a2d4279b38fadee89cf165d";
+        $appcode = "89589cd626984f6e9e3212f22e82346f";
         $headers = array();
         array_push($headers, "Authorization:APPCODE " . $appcode);
         $querys = "no=".$no;
@@ -930,6 +930,41 @@ class billController extends \core\myorm_core
         return $data;
     }
 
+    public function checkkuaidi(){
+        if (!empty($_REQUEST['logistics_number'])){
+            $no = $_REQUEST['logistics_number'];
+            $host = "https://cexpress.market.alicloudapi.com";
+            $path = "/cexpress";
+            $method = "GET";
+            $appcode = "89589cd626984f6e9e3212f22e82346f";
+            $headers = array();
+            array_push($headers, "Authorization:APPCODE " . $appcode);
+            $querys = "no=".$no;
+            $bodys = "";
+            $url = $host . $path . "?" . $querys;
+
+            $curl = curl_init();
+            curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
+            curl_setopt($curl, CURLOPT_URL, $url);
+            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($curl, CURLOPT_FAILONERROR, false);
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($curl, CURLOPT_HEADER, false);
+            if (1 == strpos("$".$host, "https://"))
+            {
+                curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+            }
+            $data = curl_exec($curl);
+            curl_close($curl);
+//        print_r($data);
+            return Response::json(true, 350, '查询成功', $data);
+        }else{
+            return Response::json(flase, 351, '错误，请填写快递单号', []);
+        }
+
+    }
+
     //添加发货
     public function addLogistics_number(){
         if (!empty($_REQUEST['logistics_number']) && !empty($_REQUEST['order_no'])){
@@ -945,7 +980,6 @@ class billController extends \core\myorm_core
             $stmt->execute();
             $bill_data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $first_bill_id = $bill_data[0]['first_bill_id'];
-
             try {
             $sql2 = "update bill set logistics_number=:logisticsnumber,logistics_name=:logisticsname where first_bill_id=:fbd";
             $stmt2 = $pdo->prepare($sql2);
