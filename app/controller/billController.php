@@ -971,37 +971,6 @@ class billController extends \core\myorm_core
 
     }
 
-    //添加发货
-    public function addLogistics_number(){
-        if (!empty($_REQUEST['logistics_number']) && !empty($_REQUEST['order_no'])){
-            $logistics_number = $_REQUEST['logistics_number'];
-            $order_no = $_REQUEST['order_no'];
-
-
-            $pdo = new \core\lib\model;
-            $sql = "select first_bill_id from bill where order_no=:orderno";
-            $stmt = $pdo->prepare($sql);
-            $stmt->bindValue(':orderno', $order_no);
-            $stmt->execute();
-            $bill_data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $first_bill_id = $bill_data[0]['first_bill_id'];
-
-            try {
-            $sql2 = "update bill set logistics_number=:logisticsnumber where first_bill_id=:fbd";
-            $stmt2 = $pdo->prepare($sql2);
-            $stmt2->bindValue(':logisticsnumber', $logistics_number);
-            $stmt2->bindValue(':fbd', $first_bill_id);
-            $stmt2->execute();
-            $rownum = $stmt->rowCount();//影响行数
-            return Response::json(true, 350, '更新成功,返回影响行数', $rownum);
-
-            } catch(Exception $e) {
-                return Response::exception(351, $e);
-            }
-
-        }else{
-            return Response::json(false, 453, '订单编号和物流单号都不能为空！', []);
-        }
-    }
+    #
 
 }
