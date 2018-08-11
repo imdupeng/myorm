@@ -1069,6 +1069,12 @@ class billController extends \core\myorm_core
             $stmt2->bindValue(':orderno', $order_no);
             $stmt2->execute();
             $rownum = $stmt->rowCount();//影响行数
+
+                $sql3 = "update bill set receiver_status=3 where order_no=:ordernol";
+                $stmt3 = $pdo->prepare($sql3);
+                $stmt3->bindValue(':ordernol', $order_no);
+                $stmt3->execute();
+
             return Response::json(true, 350, '更新成功', $kuaididata);
             } catch(Exception $e) {
                 return Response::exception(351, $e);
