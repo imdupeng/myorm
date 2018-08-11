@@ -162,7 +162,7 @@ class statisticsController extends \core\myorm_core
         $theTime = $this->culcuTime($type);
         $pdo = new \core\lib\model;
         $sql = "select partner.name,avg(sale_price) as orderamount from bill 
-        left join partner on bill.sale_to_open_id=partner.partner_openid  where bill_type=3 and created_at > '".$theTime['starttime']."' and created_at<'".$theTime['endtime']."' group by sale_to_open_id order by orderamount desc limit ".$num;
+        left join partner on bill.sale_to_partner_id=partner.id  where bill_type=3 and created_at > '".$theTime['starttime']."' and created_at<'".$theTime['endtime']."' group by sale_to_partner_id order by orderamount desc limit ".$num;
         $stmt = $pdo->query($sql);
         $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         if ($data){
