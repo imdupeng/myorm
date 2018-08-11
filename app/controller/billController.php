@@ -938,6 +938,11 @@ class billController extends \core\myorm_core
         $stmt->bindValue(':orderno', $orderno);
         $stmt->execute();
         $bill_data = $stmt->fetch(\PDO::FETCH_ASSOC);//获取订单数据
+
+        if ($openid == $bill_data['creator_open_id']){
+            return Response::json(false, 350, '访问者是订单创建人', $bill_data);
+        }
+
         if (empty($bill_data['po_from_partner_id'])){
             return Response::json(false, 451, '此订单未选择伙伴', []);
         }
