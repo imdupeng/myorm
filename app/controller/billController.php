@@ -687,14 +687,30 @@ class billController extends \core\myorm_core
             list($effected, $lastId) = $this->fastInsert($sql, $data);
 
             // 将代理商订单标记为已处理
-            if ($Rdata['bill_type'] == 2 && $Rdata['last_bill_id'] > 0) {
+            if ($Rdata['bill_type'] == 2 && (int)$Rdata['last_bill_id'] > 0) {
                 $sql4 = "update bill set receiver_status = 2
                     where id = ? and po_from_open_id = ?";
                 $pdo2 = new \core\lib\model;
                 $stmt2 = $pdo2->prepare($sql4);
-                $stmt2->bindValue(1, $Rdata['last_bill_id']);
+                $stmt2->bindValue(1, (int)$Rdata['last_bill_id']);
                 $stmt2->bindValue(2, $openid);
                 $effected = $stmt2->execute();
+
+                $sql4 = "select id, first_bill_id, last_bill_id
+                    from bill
+                    where id = ? and po_from_open_id = ?";
+                ;
+                $stmt = $this->fastQuery($sql4, array(
+                    1 => (int)$Rdata['last_bill_id'],
+                    2 => $openid
+                ));
+                $last_bill = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if($last_bill['first_bill_id'] > 0) {
+                    $Rdata['first_bill_id'] = $last_bill['first_bill_id'];
+                } else {
+                    $Rdata['first_bill_id'] = $last_bill['id'];
+                }
+
             }
 
             if ($effected) {
@@ -940,7 +956,7 @@ class billController extends \core\myorm_core
         $bill_data = $stmt->fetch(\PDO::FETCH_ASSOC);//获取订单数据
 
         if ($openid == $bill_data['creator_open_id']){
-            return Response::json(false, 350, '访问者是订单创建人', $bill_data);
+            return Response::json(true, 350, '访问者是订单创建人', $bill_data);
         }
 
         if (empty($bill_data['po_from_partner_id'])){
@@ -1053,7 +1069,7 @@ class billController extends \core\myorm_core
             $kuaididata = json_decode($kuaidijson,true);
             $logistics_name = $kuaididata['type'];
             $pdo = new \core\lib\model;
-            $sql = "select first_bill_id from bill where order_no=:orderno";
+            $sql = "select first_bill_id, po_from_open_id from bill where order_no=:orderno";
             $stmt = $pdo->prepare($sql);
             $stmt->bindValue(':orderno', $order_no);
             $stmt->execute();
@@ -1070,10 +1086,12 @@ class billController extends \core\myorm_core
             $stmt2->execute();
             $rownum = $stmt->rowCount();//影响行数
 
+            if($_SESSION['openid'] == $bill_data[0]['po_from_open_id']) {
                 $sql3 = "update bill set receiver_status=3 where order_no=:ordernol";
                 $stmt3 = $pdo->prepare($sql3);
                 $stmt3->bindValue(':ordernol', $order_no);
                 $stmt3->execute();
+            }
 
             return Response::json(true, 350, '更新成功', $kuaididata);
             } catch(Exception $e) {

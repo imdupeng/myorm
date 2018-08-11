@@ -21,10 +21,8 @@ class Response
         }
         $obc = ob_get_contents();
         ob_clean();
-        $res = ['status'=>$status,'code'=>$code,'message'=>$message,'data'=>$data,'debug'=>$obc];
-
-            echo json_encode($res);
-
+        $res = ['status'=>$status,'code'=>$code,'message'=>$message,'data'=>$data,'debug'=>$obc, 'request'=>$_REQUEST];
+        echo json_encode($res);
         exit;
     }
 
