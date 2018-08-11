@@ -332,7 +332,7 @@ class productController extends \core\myorm_core
         $Rdata = (array)($_REQUEST ?? []);
 
         //允许外面传入的字段
-        $allowFields = ['name', 'description', 'vendor_id', 'purchase_price', 'wholesale_price', 'retail_price', 'orderby'];
+        $allowFields = ['copy_from_id','category_id','name', 'description', 'vendor_id', 'vendor_name','purchase_price', 'wholesale_price', 'retail_price', 'orderby'];
 
         // 固定值, 补充或覆盖到 $data 中
         $openid = $_SESSION['openid'];
