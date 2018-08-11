@@ -277,18 +277,16 @@ class productController extends \core\myorm_core
         $param = [];
         $pk = (string)($_REQUEST['id'] ?? '');
         $openid = $_SESSION['openid'];
+
         $sql2 = "
             select $fields from goods
              where id=:_pk
-             and openid=:_openid
-             and pstatus=2
         ";
-        $param['_openid'] = $openid;
+
         $param['_pk'] = $pk;
         $stmt = $this->fastQuery($sql2, $param);
 
         $data = $stmt->fetch(\PDO::FETCH_ASSOC);
-
         // 图片
         if ($data) {
             $data['images'] = $this->fetchImages($pk);
