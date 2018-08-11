@@ -1034,7 +1034,7 @@ class billController extends \core\myorm_core
 //        print_r($data);
             return Response::json(true, 350, '查询成功', $data);
         }else{
-            return Response::json(flase, 351, '错误，请填写快递单号', []);
+            return Response::json(false, 351, '错误，请填写快递单号', []);
         }
 
     }
