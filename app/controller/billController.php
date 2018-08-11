@@ -1056,11 +1056,12 @@ class billController extends \core\myorm_core
             $first_bill_id = $bill_data[0]['first_bill_id'];
             try {
                 $nowtime = time();
-            $sql2 = "update bill set logistics_number=:logisticsnumber,logistics_name=:logisticsname,logistics_time='$nowtime',logistics_status=2 where first_bill_id=:fbd";
+            $sql2 = "update bill set logistics_number=:logisticsnumber,logistics_name=:logisticsname,logistics_time='$nowtime',logistics_status=2 where first_bill_id=:fbd or order_no=:orderno";
             $stmt2 = $pdo->prepare($sql2);
             $stmt2->bindValue(':logisticsnumber', $logistics_number);
             $stmt2->bindValue(':logisticsname', $logistics_name);
             $stmt2->bindValue(':fbd', $first_bill_id);
+            $stmt2->bindValue(':orderno', $order_no);
             $stmt2->execute();
             $rownum = $stmt->rowCount();//影响行数
             return Response::json(true, 350, '更新成功', $kuaididata);
