@@ -329,6 +329,82 @@ class billController extends \core\myorm_core
     }
 
     /*
+     * 查看代理商订单详情
+     * @param int $id 订单id
+     * http://118.126.112.43:8080/index.php/bill/viewPOBill
+     * */
+    public function viewPOBill()
+    {
+        if (empty($_REQUEST['order_no'])){
+            return Response::json(false, 359, '缺少订单id！', []);
+        }else{
+            $order_no = (int)$_REQUEST['order_no'];
+        }
+        $fields = implode(', ', [
+            'bill.id',
+            'bill.order_no',
+            'bill.creator_open_id',//bill.creator_open_id=user.open_id
+            'bill.address_info_id',//处理合并地址
+            'bill.sender_info_id',//处理合并发货人信息
+            'bill.first_bill_id',
+            'bill.last_bill_id',
+            'bill.goods_id',
+            'bill.goods_desc',
+            'bill.goods_title',
+            'bill.number',
+            'bill.purchas_price',
+            'bill.description',
+            'bill.logistics_status',//物流状态 1未发运 2已发运
+            'bill.logistics_number',
+            'bill.logistics_time',
+            // 'image.path',//已处理 bill.logistics_image_id = image.id
+            'bill.receiver_status',
+            'bill.year',
+            'bill.created_at',
+            'bill.send_time',
+            'sender.name as sender_name',
+            'sender.phone as sender_phone',
+            'address.name as buyer_name',
+            'address.phone as buyer_phone',
+            'address.address as buyer_address',
+            'bill.bill_type'
+        ]);
+
+        $param  = [];
+        $openid = $_SESSION['openid'];
+        $sql2 = "
+            select $fields from bill 
+              left join user on bill.creator_open_id=user.open_id
+              left join sender on sender.id=bill.sender_info_id
+              left join address on address.partner_id=bill.sale_to_open_id
+             where (po_from_open_id=:_openid)
+               and order_no=:_order_no";
+        $param['_openid'] = $openid;
+        $param['_order_no'] = $order_no;
+        $stmt = $this->fastQuery($sql2, $param);
+        $data = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        $sql3 = "select image.path as image, image.id from image 
+              left join `goods_image` on goods_image.image_id = image.id
+             where (goods_id=:goods_id)";
+        $stmt = $this->fastQuery($sql3, ['goods_id' => $data['goods_id']]);
+        $images = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $data['images' ] = (array)$images;
+
+        //添加代理商的名字
+        $partnersOpenid = [$data['creator_open_id']];
+        $this->loadPartnerNames($partnersOpenid, $openid);
+        $data['buyername'] = isset($this->partnerNames[$data['creator_open_id']]['name'])
+            ? $this->partnerNames[$data['creator_open_id']]['name'] 
+            : '';
+        $data['buyerid'] = isset($this->partnerNames[$data['creator_open_id']]['id'])
+            ? $this->partnerNames[$data['creator_open_id']]['id'] 
+            : '';
+
+        return Response::json(true, 350, '查询订单成功', $data);
+    }
+
+    /*
      * 获取订单详情
      * @param int $id 订单id
      * http://118.126.112.43:8080/index.php/bill/view
@@ -372,7 +448,6 @@ class billController extends \core\myorm_core
             'address.name as buyer_name',
             'address.phone as buyer_phone',
             'address.address as buyer_address',
-            'bill.logistics_image_id',
             'bill.bill_type'
         ]);
 
@@ -383,17 +458,12 @@ class billController extends \core\myorm_core
               left join user on bill.creator_open_id=user.open_id
               left join sender on sender.id=bill.sender_info_id
               left join address on address.partner_id=bill.sale_to_open_id
-             where (creator_open_id=:_openid OR po_from_open_id=:_openid)
+             where (creator_open_id=:_openid)
                and order_no=:_order_no";
         $param['_openid'] = $openid;
         $param['_order_no'] = $order_no;
         $stmt = $this->fastQuery($sql2, $param);
         $data = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        if($data['po_from_open_id'] == $openid) {
-            // 查看代理商发来的订单时候, 不显示其销售价
-            unset($data['sale_price']);
-        }
 
         $sql3 = "select image.path as image, image.id from image 
               left join `goods_image` on goods_image.image_id = image.id
